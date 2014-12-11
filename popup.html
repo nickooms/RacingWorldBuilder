@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>Getting Started Extension's Popup</title>
+  <link rel="stylesheet" type="text/css" href="popup.css" />
+  <script src="popup.js"></script>
+</head>
+
+<body>
+  <table>
+    <tr>
+      <td>City :</td>
+      <td>
+        <select id="gemeente">
+          <option value="Stabroek">Stabroek</option>
+          <option value="Antwerpen">Antwerpen</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td>Street :</td>
+      <td>
+        <select id="straat">
+          <option value="Markt">Markt</option>
+          <option value="Frans Oomsplein">Frans Oomsplein</option>
+          <option value="Witvenstraat">Witvenstraat</option>
+          <option value="Hooghuisstraat">Hooghuisstraat</option>
+          <option value="Grote Markt">Grote Markt</option>
+          <option value="Gildekamersstraat">Gildekamersstraat</option>
+          <option value="Suikerrui">Suikerrui</option>
+          <option value="Meirbrug">Meirbrug</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td>Layer :</td>
+      <td>
+        <select id="layer">
+          <option value="GRB_WBN">GRB - WBN - wegbaan</option>
+          <option value="GRB_WGO">GRB - WGO - wegopdeling</option>
+          <option value="GRB_GBG">GRB - GBG - gebouw aan de grond</option>
+          <option value="GRB_WVB">GRB - WVB - wegverbinding</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td>K :</td>
+      <td>
+        <select id="k">
+          <option value="0.8">0.8</option>
+          <option value="0.10">0.10</option>
+          <option value="0.11">0.11</option>
+          <option value="0.12">0.12</option>
+          <option value="0.14" selected="">0.14</option>
+          <option value="0.16">0.16</option>
+          <option value="0.18">0.18</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td>Zoom :</td>
+      <td>
+        <select id="zoomToScale">
+          <option value="0">0</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4" selected="">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td>Straat Line :</td>
+      <td>
+        <select id="straatLine">
+          <option value="0" selected="">0</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td>Straat Line Point:</td>
+      <td>
+        <select id="straatLinePoint">
+          <option value="0" selected="">0</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+        </select>
+      </td>
+    </tr>
+  </table>
+  <button id="OK">OK</button>
+  <button id="Copy">Copy</button>
+  <ul id="log">
+  </ul>
+</body>
+
+</html>

@@ -1,0 +1,134 @@
+/* 
+    Document   : maptoolbar.css
+    Created on : 28-Jan-2009, 17:05:05
+    Author     : quaglan
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+/* 
+   TODO customize this sample style
+   Syntax recommendation http://www.w3.org/TR/REC-CSS2/
+*/
+
+.bzoomin {
+    background-image:url(../img/icon_zoomin.png) !important;
+}
+.bzoomout {
+    background-image:url(../img/icon_zoomout.png) !important;
+}
+.bzoomoutall {
+    background-image:url(../img/icon_zoomfull.png) !important;
+}
+
+.pan {
+     background-image: url(../img/icon_pan.png) !important;
+    }
+/* A.Q.: WHY where these here?
+		html, body {
+		    font: normal 12px verdana;
+		    margin: 0;
+		    padding: 0;
+		    border: 0 none;
+		    overflow: hidden;
+		    height: 100%;
+		}
+*/
+        .cf-wms-node img.x-tree-node-icon {
+          width: auto !important;
+          height: auto !important;
+        }
+
+        .float-left {
+          float: left;
+        }
+        .clear-left {
+          clear: left;
+        }
+        .zoomin {
+          background-image:url(../img/icon_zoomin.png) !important;
+          height:20px !important;
+          width:20px !important;
+        }
+        .zoomout {
+          background-image:url(../img/icon_zoomout.png) !important;
+          height:20px !important;
+          width:20px !important;
+        }
+        .zoomfull {
+          background-image:url(../img/icon_zoomfull.png) !important;
+          height:20px !important;
+          width:20px !important;
+        }
+        .pan {
+          background-image:url(../img/icon_pan.png) !important;
+          height:20px !important;
+          width:20px !important;
+        }
+        .drawpoint {
+          background-image:url(../img/draw_point_off.png) !important;
+          height:20px !important;
+          width:20px !important;
+        }
+        .drawline {
+          background-image:url(../img/draw_line_off.png) !important;
+          height:20px !important;
+          width:20px !important;
+        }
+        .modify {
+          background-image:url(../img/pencil_go.png) !important;
+          height:20px !important;
+          width:20px !important;
+        }
+        .select {
+          background-image:url(../img/icon_select.png) !important;
+          height:20px !important;
+          width:20px !important;
+        }
+         .print {
+          background-image:url(../img/printer.png) !important;
+          height:20px !important;
+          width:20px !important;
+        }
+        .deleteselected {
+          background-image:url(../img/pencil_delete.png) !important;
+          height:20px !important;
+          width:20px !important;
+        }
+        .delete {
+          background-image:url(../img/cross.png) !important;
+          height:20px !important;
+          width:20px !important;
+        }
+        .drawpolygon {
+          background-image:url(../img/draw_polygon_off.png) !important;
+          height:20px !important;
+          width:20px !important;
+        }
+        .next {
+            background-image:url(../img/resultset_next.png) !important;
+            height:20px !important;
+            width:20px !important;
+        }
+        .back {
+            background-image:url(../img/resultset_previous.png) !important;
+            height:20px !important;
+            width:20px !important;
+        }
+        .info {
+            background-image:url(../img/info.png) !important;
+            height:20px !important;
+            width:20px !important;
+        }
+        
+                .measureLength {
+            background-image:url(../img/measureLength.png) !important;
+            height:20px !important;
+            width:20px !important;
+        }
+        
+                        .measureArea {
+            background-image:url(../img/measureArea.png) !important;
+            height:20px !important;
+            width:20px !important;
+        }
