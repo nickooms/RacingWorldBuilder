@@ -1,4 +1,5 @@
 var baseURL = 'http://geo-vlaanderen.agiv.be/gdiviewer/';
+var proxyURL = 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms??LAYERS=GRB_WBN&EXCEPTIONS=XML&FORMAT=image%2Fpng&TRANSPARENT=TRUE&VERSION=1.3.0&SERVICE=WMS&REQUEST=GetMap&STYLES=&ISBASELAYER=false&REALMINSCALE=75000&REALMAXSCALE=250&CRS=EPSG%3A31370&BBOX=';
 function checkForValidUrl(tabId, changeInfo, tab) {
   if (tab.url.indexOf(baseURL) == 0) {
     chrome.pageAction.show(tabId);
@@ -20,62 +21,13 @@ chrome.webRequest.onBeforeRequest.addListener(function(details) {
           return {
             redirectUrl: chrome.extension.getURL(url)
           };
-        /*case 'theme/default/style.css':
+        case 'theme/default/style.css':
           return {
-            redirectUrl: baseURL + 'js/OpenLayers-2.13.1/theme/default/style.css'
+            redirectUrl: chrome.extension.getURL('js/OpenLayers-2.13.1/' + url)
           };
-        case 'js/OpenLayers-2.13.1/theme/default/style.css':
-          return {
-            redirectUrl: chrome.extension.getURL(url)
-          };*/
         default:
           console.log('TYPE ' + details.type + '\n' + url);
       }
-      if (url == 'theme/default/style.css') {
-        return {
-          redirectUrl: baseURL + 'js/OpenLayers-2.13.1/theme/default/style.css'
-        };
-      }
-      /*if (url == 'js/ExtJs-3.2.1/rowactions/Ext.ux.grid.RowActions.css') {
-        return {
-          redirectUrl: chrome.extension.getURL(url)
-        };
-      }*/
-      /*if (url == 'js/ExtJs-3.2.1/resources/css/ext-all.css') {
-        return {
-          redirectUrl: chrome.extension.getURL(url)
-        };
-      }*/
-      /*if (url == 'css/ext-carto_css.css') {
-        return {
-          redirectUrl: chrome.extension.getURL(url)
-        };
-      }*/
-      if (url == 'js/OpenLayers-2.13.1/theme/default/style.css') {
-        return {
-          redirectUrl: chrome.extension.getURL(url)
-        };
-      }
-      /*if (url == 'js/ExtJs-3.2.1/examples.css') {
-        return {
-          redirectUrl: chrome.extension.getURL(url)
-        };
-      }*/
-      /*if (url == 'css/mapToolbar.css') {
-        return {
-          redirectUrl: chrome.extension.getURL(url)
-        };
-      }*/
-      /*if (url == 'js/ExtJs-3.2.1/statusbar/css/statusbar.css') {
-        return {
-          redirectUrl: chrome.extension.getURL(url)
-        };
-      }*/
-      /*if (url == 'js/ExtJs-3.2.1/FileUploadField.css') {
-        return {
-          redirectUrl: chrome.extension.getURL(url)
-        };
-      }*/
       break;
     case 'script':
       switch (url) {
@@ -106,7 +58,6 @@ chrome.webRequest.onBeforeRequest.addListener(function(details) {
         case 'js/OpenLayers-2.13.1/OpenLayers.js':
           return {
             redirectUrl: chrome.extension.getURL('empty.js')
-            //redirectUrl: 'javascript:'
           };
         default:
           console.log('TYPE ' + details.type + '\n' + url);
@@ -120,81 +71,55 @@ chrome.webRequest.onBeforeRequest.addListener(function(details) {
           };
       }
     case 'image':
-      console.log('TYPE ' + details.type + '\n' + url);
-      if (url == 'img/layer-switcher-minimize.png') {
-        return {
-          redirectUrl: baseURL + 'js/OpenLayers-2.13.1/img/layer-switcher-minimize.png'
-        };
-      }
-      if (url == 'img/layer-switcher-maximize.png') {
-        return {
-          redirectUrl: baseURL + 'js/OpenLayers-2.13.1/img/layer-switcher-maximize.png'
-        };
-      }
-      if (url == 'img/pan.png') {
-        return {
-          redirectUrl: chrome.extension.getURL('img/pan.png')
-        };
-      }
-      if (url == 'http://geo-vlaanderen.agiv.be/gdiviewer/js/OpenLayers-2.13.1/img/ZoomToBox.png') {
-        return {
-          redirectUrl: chrome.extension.getURL('img/ZoomToBox.png')
-        };
-      }
-      if (details.url == 'http://geo-vlaanderen.agiv.be/gdiviewer/img/ZoomToBox.png') {
-        return {
-          redirectUrl: chrome.extension.getURL('img/ZoomToBox.png')
-        };
-      }
-      if (url == 'http://geo-vlaanderen.agiv.be/gdiviewer/js/OpenLayers-2.13.1/img/ruler_square.png') {
-        return {
-          redirectUrl: chrome.extension.getURL('img/ruler_square.png')
-        };
-      }
-      if (details.url == 'http://geo-vlaanderen.agiv.be/gdiviewer/img/ruler_square.png') {
-        return {
-          redirectUrl: chrome.extension.getURL('img/ruler_square.png')
-        };
-      }
-      if (url == 'http://geo-vlaanderen.agiv.be/gdiviewer/js/OpenLayers-2.13.1/img/AgivLogo.jpg') {
-        return {
-          redirectUrl: chrome.extension.getURL('img/AgivLogo.jpg')
-        };
-      }
-      if (details.url == 'http://geo-vlaanderen.agiv.be/gdiviewer/img/AgivLogo.jpg') {
-        return {
-          redirectUrl: chrome.extension.getURL('img/AgivLogo.jpg')
-        };
-      }
-      if (details.url == 'http://geo-vlaanderen.agiv.be/gdiviewer/js/OpenLayers-2.13.1/img/layer-switcher-maximize.png') {
-        return {
-          redirectUrl: chrome.extension.getURL('js/OpenLayers-2.13.1/img/layer-switcher-maximize.png')
-        }
-      }
-      if (details.url == 'http://geo-vlaanderen.agiv.be/gdiviewer/js/OpenLayers-2.13.1/img/layer-switcher-minimize.png') {
-        return {
-          redirectUrl: chrome.extension.getURL('js/OpenLayers-2.13.1/img/layer-switcher-minimize.png')
-        }
-      }
-      if (details.url == 'http://grb.agiv.be/geodiensten/raadpleegdiensten/GRB-basiskaart/wms?LAYERS=GRB_BASISKAART&TRANSPARENT=FALSE&FORMAT=image%2Fpng&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&SRS=EPSG%3A31370&BBOX=238747.10016087,150000,347120.6502413,258373.55008043&WIDTH=512&HEIGHT=512') {
-        return {
-          redirectUrl: chrome.extension.getURL('tiles/BBOX=238747.10016087,150000,347120.6502413,258373.55008043.png')
-        };
-      }
-      if (details.url == 'http://grb.agiv.be/geodiensten/raadpleegdiensten/GRB-basiskaart/wms?LAYERS=GRB_BASISKAART&TRANSPARENT=FALSE&FORMAT=image%2Fpng&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&SRS=EPSG%3A31370&BBOX=22000,150000,130373.55008043,258373.55008043&WIDTH=512&HEIGHT=512') {
-        return {
-          redirectUrl: chrome.extension.getURL('tiles/BBOX=22000,150000,130373.55008043,258373.55008043.png')
-        }
-      }
-      if (details.url == 'http://grb.agiv.be/geodiensten/raadpleegdiensten/GRB-basiskaart/wms?LAYERS=GRB_BASISKAART&TRANSPARENT=FALSE&FORMAT=image%2Fpng&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&SRS=EPSG%3A31370&BBOX=130373.55008043,150000,238747.10016087,258373.55008043&WIDTH=512&HEIGHT=512') {
-        return {
-          redirectUrl: chrome.extension.getURL('tiles/BBOX=130373.55008043,150000,238747.10016087,258373.55008043.png')
-        }
-      }
-      if (details.url == 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.agiv.be/ogc/wms/navstreets?LAYERS=6&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&FORMAT=image%2Fjpeg&SRS=EPSG%3A31370&BBOX=22000,150000,359066.66666667,487066.66666667&WIDTH=256&HEIGHT=256') {
-        return {
-          redirectUrl: chrome.extension.getURL('tiles/BBOX=22000,150000,359066.66666667,487066.66666667.jpg')
-        }
+      switch (url) {
+        case 'img/AgivLogo.jpg':
+          return {
+            redirectUrl: chrome.extension.getURL(url)
+          };
+        case 'img/help.png':
+        case 'img/layer-switcher-maximize.png':
+        case 'img/layer-switcher-minimize.png':
+        case 'img/pan.png':
+        case 'img/ruler.png':
+        case 'img/ruler_square.png':
+        case 'img/ZoomToBox.png':
+          return {
+            redirectUrl: chrome.extension.getURL('js/OpenLayers-2.13.1/' + url)
+          }
+        case 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.agiv.be/ogc/wms/navstreets?LAYERS=6&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&FORMAT=image%2Fjpeg&SRS=EPSG%3A31370&BBOX=22000,150000,359066.66666667,487066.66666667&WIDTH=256&HEIGHT=256':
+          return {
+            redirectUrl: chrome.extension.getURL('tiles/' + url.replace('http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.agiv.be/ogc/wms/navstreets?LAYERS=6&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&FORMAT=image%2Fjpeg&SRS=EPSG%3A31370&', '').replace('&WIDTH=256&HEIGHT=256', '') + '.jpg')
+          }
+        case 'http://grb.agiv.be/geodiensten/raadpleegdiensten/GRB-basiskaart/wms?LAYERS=GRB_BASISKAART&TRANSPARENT=FALSE&FORMAT=image%2Fpng&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&SRS=EPSG%3A31370&BBOX=238747.10016087,150000,347120.6502413,258373.55008043&WIDTH=512&HEIGHT=512':
+        case 'http://grb.agiv.be/geodiensten/raadpleegdiensten/GRB-basiskaart/wms?LAYERS=GRB_BASISKAART&TRANSPARENT=FALSE&FORMAT=image%2Fpng&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&SRS=EPSG%3A31370&BBOX=22000,150000,130373.55008043,258373.55008043&WIDTH=512&HEIGHT=512':
+        case 'http://grb.agiv.be/geodiensten/raadpleegdiensten/GRB-basiskaart/wms?LAYERS=GRB_BASISKAART&TRANSPARENT=FALSE&FORMAT=image%2Fpng&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&SRS=EPSG%3A31370&BBOX=130373.55008043,150000,238747.10016087,258373.55008043&WIDTH=512&HEIGHT=512':
+          return {
+            redirectUrl: chrome.extension.getURL('tiles/' + url.replace('http://grb.agiv.be/geodiensten/raadpleegdiensten/GRB-basiskaart/wms?LAYERS=GRB_BASISKAART&TRANSPARENT=FALSE&FORMAT=image%2Fpng&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&SRS=EPSG%3A31370&', '').replace('&WIDTH=512&HEIGHT=512', '') + '.png')
+          };
+        default:
+          if (url.indexOf(proxyURL) == 0) {
+            var key = url.replace(proxyURL, '');
+            var cachedImage = window.localStorage.getItem(key);
+            if (cachedImage == null) {
+              var img = new Image();
+              img.onload = function() {
+                var canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 512;
+                var context = canvas.getContext('2d');
+                context.drawImage(this, 0, 0, canvas.width, canvas.height);
+                var key = this.src.replace(proxyURL, '');
+                window.localStorage.setItem(key, canvas.toDataURL());
+              }
+              img.src = url;
+            } else {
+              return {
+                redirectUrl: cachedImage
+              };
+            }
+          } else {
+            console.log('TYPE ' + details.type + '\n' + url);
+          }
       }
       if (details.url == 'http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=GRB_BASISKAART&format=image/png&STYLE=default&SCALE=250.00000000000003') {
         return {
@@ -205,8 +130,6 @@ chrome.webRequest.onBeforeRequest.addListener(function(details) {
         case 'img/world.png':
         case 'img/drop-add.gif':
         case 'img/tool-sprites.gif':
-        case 'img/help.png':
-        case 'img/ruler.png':
         case 'js/ExtJs-3.2.1/rowactions/database_go.png':
         case 'js/ExtJs-3.2.1/resources/images/default/window/icon-info.gif':
         case 'js/ExtJs-3.2.1/resources/images/default/qtip/tip-sprite.gif':
@@ -254,21 +177,19 @@ chrome.webRequest.onBeforeRequest.addListener(function(details) {
           }
           break;
         default:
-          url = details.url.split('?', 2);
-          if (url[0] == 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx') {
-            console.log(url[1].split('&').join('\n'));
-          }
+          console.log(url);
       }  
       break;
     case 'main_frame':
       //console.log('TYPE ' + details.type + '\n' + url);
       break;
     case 'other':
-      console.log('TYPE ' + details.type + '\n' + url);
       if (details.url == 'http://geo-vlaanderen.agiv.be/favicon.ico') {
         return {
           redirectUrl: chrome.extension.getURL('favicon.ico')
         };
+      } else {
+        console.log('TYPE ' + details.type + '\n' + url);
       }
       break;
     default:

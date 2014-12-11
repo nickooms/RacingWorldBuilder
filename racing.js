@@ -1,4 +1,5 @@
 window.Racing = {
+  SVG: 'http://www.w3.org/2000/svg',
   addLayersTimeout: 0,
   vecLayer: null,
   timestamp: null,
@@ -21,12 +22,29 @@ window.Racing = {
     Racing.vecLayer = Racing.layerByName('Vector');
   },
   pixel: function(data, imageWidth, x, y) {
-    var red = data[((imageWidth * y) + x) * 4];
-    var green = data[((imageWidth * y) + x) * 4 + 1];
-    var blue = data[((imageWidth * y) + x) * 4 + 2];
-    var alpha = data[((imageWidth * y) + x) * 4 + 3];
+    var offset = ((imageWidth * y) + x) * 4;
+    var red = data[offset];
+    var green = data[offset + 1];
+    var blue = data[offset + 2];
+    var alpha = data[offset + 3];
     var color = red + ' ' + green + ' ' + blue + ' ' + alpha;
     return color;
+  },
+  colorNumber: function(data, imageWidth, x, y) {
+    var offset = ((imageWidth * y) + x) * 4;
+    var red = data[offset];
+    var green = data[offset + 1];
+    var blue = data[offset + 2];
+    var alpha = data[offset + 3];
+    return (red * 256 * 256 * 256) + (green * 256 * 256) + (blue * 256) + alpha;
+  },
+  colorHex: function(data, imageWidth, x, y) {
+    var offset = ((imageWidth * y) + x) * 4;
+    var red = data[offset];
+    var green = data[offset + 1];
+    var blue = data[offset + 2];
+    var alpha = data[offset + 3];
+    return '0x' + ((red * 256 * 256 * 256) + (green * 256 * 256) + (blue * 256) + alpha).toString(16).toUpperCase();
   },
   plotCorners: function(corners, ctx) {
     var w = ctx.canvas.width,
@@ -40,7 +58,7 @@ window.Racing = {
         i = step + x;
         if (corners[i] > 0) {
           ctx.beginPath();
-          ctx.arc(x, y, 7, twopi, false);
+          ctx.arc(x, y, 3, twopi, false);
           ctx.closePath();
           ctx.fill();
           points.push({
@@ -180,10 +198,11 @@ window.Racing = {
     Racing.log('Added Layer: ' + Racing.layerToActivate);
     Racing.log('Zooming To Scale: ' + Racing.zoomToScale);
     Racing.timer();
-    map.zoomToScale(Racing.zoomToScale);
+    //map.zoomToScale(Racing.zoomToScale);
     Racing.log('Zoomed To Scale: ' + Racing.zoomToScale);
     var straatLinePoint = Racing.straat.lines[Racing.straatLine][Racing.straatLinePoint];
     map.setCenter([straatLinePoint.x, straatLinePoint.y]);
+    map.zoomToScale(Racing.zoomToScale);
     Racing.activeLayer = Racing.layerByName(Racing.layerToActivate);
     Racing.log('Start Copy Layer ' + Racing.layerToActivateName);
     Racing.timer();
@@ -231,50 +250,37 @@ window.Racing = {
         var green = data[i + 1];
         var blue = data[i + 2];
         var alpha = data[i + 3];
-        var color = 'rgba(' + red + ',' + green + ',' + blue + ',' + 255 / alpha + ')';
+        //var color = 'rgba(' + red + ',' + green + ',' + blue + ',' + 255 / alpha + ')';
+        var color = '0x' + ((red * 256 * 256 * 256) + (green * 256 * 256) + (blue * 256) + alpha).toString(16).toUpperCase();
         if (colors[color] == null) {
           colors[color] = 1;
         } else {
           colors[color]++;
         }
-        if (red == 0 && green == 0 && blue == 0 && alpha == 0) {
-          red = green = blue = 255;
-          data[i] = data[i + 1] = data[i + 2] = 255;
-          alpha = 255;
-          data[i + 3] = 255;
-        }
-        if (red == 204 && green == 204 && blue == 204 && alpha == 255) {
-          red = green = blue = 255;
-          data[i] = data[i + 1] = data[i + 2] = 255;
-          alpha = 255;
-          data[i + 3] = 255;
-        }
-        if (red == 183 && green == 183 && blue == 183 && alpha == 255) {
-          red = green = blue = 255;
-          data[i] = data[i + 1] = data[i + 2] = 255;
-          alpha = 255;
-          data[i + 3] = 255;
-        }
-        if (red == 250 && green == 155 && blue == 135 && alpha == 255) {
-          red = green = blue = 255;
-          data[i] = data[i + 1] = data[i + 2] = 255;
-          alpha = 255;
-          data[i + 3] = 255;
-        }
-        if (red == 250 && green == 125 && blue == 105 && alpha == 255) {
-          red = green = blue = 255;
-          data[i] = data[i + 1] = data[i + 2] = 255;
-          alpha = 255;
-          data[i + 3] = 255;
-        }
-        if (red != 255 || green != 255 || blue != 255 || alpha != 255) {
-          red = green = blue = 0;
-          data[i] = data[i + 1] = data[i + 2] = 0;
-          alpha =  255;
-          data[i + 3] = 255;
+        switch (color) {
+          case '0x0':
+          case '0xCCCCCCFF':
+          case '0xB7B7B7FF':
+          case '0xFA9B87FF':
+          case '0xFA7D69FF':
+            color = '0xFFFFFFFF';
+            red = green = blue = 255;
+            data[i] = data[i + 1] = data[i + 2] = 255;
+            alpha = 255;
+            data[i + 3] = 255;
+            break;
+          default:
+            if (color != '0xFFFFFFFF') {
+              color = '0x000000FF'
+              red = green = blue = 0;
+              data[i] = data[i + 1] = data[i + 2] = 0;
+              alpha =  255;
+              data[i + 3] = 255;
+            }
         }
       }
       Racing.log('Found Known Colors');
+      //console.log(JSON.stringify(colors).split(',').join('\n'));
       Racing.timer();
       context.putImageData(imageData, 0, 0);
       Racing.log('Removed Known Colors');
@@ -286,7 +292,8 @@ window.Racing = {
         var green = data[i + 1];
         var blue = data[i + 2];
         var alpha = data[i + 3];
-        var color = red + ' ' + green + ' ' + blue + ' ' + alpha;
+        //var color = red + ' ' + green + ' ' + blue + ' ' + alpha;
+        var color = '0x' + ((red * 256 * 256 * 256) + (green * 256 * 256) + (blue * 256) + alpha).toString(16).toUpperCase();
         if (colors[color] == null) {
           colors[color] = 1;
         } else {
@@ -297,23 +304,18 @@ window.Racing = {
       for (var color in colors) {
         Racing.log('Found color ' + color + ' : ' + colors[color] + ' pixels');
       }
-      var x = 20;
-      var y = 20;
-      var red = data[((imageWidth * y) + x) * 4];
-      var green = data[((imageWidth * y) + x) * 4 + 1];
-      var blue = data[((imageWidth * y) + x) * 4 + 2];
-      var alpha = data[((imageWidth * y) + x) * 4 + 3];
       context.fillStyle = '#000000';
       var twopi = 2 * Math.PI;
       for (var y = 0; y < imageHeight; y++) {
         for (var x = 0; x < imageWidth; x++) {
-          var red = data[((imageWidth * y) + x) * 4];
-          var green = data[((imageWidth * y) + x) * 4 + 1];
-          var blue = data[((imageWidth * y) + x) * 4 + 2];
-          var alpha = data[((imageWidth * y) + x) * 4 + 3];
+          var offset = ((imageWidth * y) + x) * 4;
+          var red = data[offset];
+          var green = data[offset + 1];
+          var blue = data[offset + 2];
+          var alpha = data[offset + 3];
           if (red == 0 && green == 0 && blue == 0 && alpha == 255) {
             context.beginPath();
-            context.arc(x, y, 3, twopi, false);
+            context.arc(x, y, 1, twopi, false);
             context.closePath();
             context.fill();
           }
@@ -336,7 +338,7 @@ window.Racing = {
       var lines = [];
       var linesFound = [];
       var xi, yi, xj, yj;
-      var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      var svg = document.createElementNS(Racing.SVG, 'svg');
       svg.setAttribute('width', canvas.getAttribute('width'));
       svg.setAttribute('height', canvas.getAttribute('height'));
       svg.style.position = 'absolute';
@@ -349,19 +351,19 @@ window.Racing = {
       for (var i = 0; i < p.length; i++) {
         xi = p[i].x;
         yi = p[i].y;
-        var circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        var circle = document.createElementNS(Racing.SVG, 'circle');
         circle.setAttribute('cx', xi);
         circle.setAttribute('cy', yi);
         circle.setAttribute('stroke', 'yellow');
-        circle.setAttribute('stroke-width', 5);
+        circle.setAttribute('stroke-width', 3);
         circle.setAttribute('fill', 'yellow');
-        circle.setAttribute('r', 5);
+        circle.setAttribute('r', 3);
         circle.setAttribute('class', 'circle');
         circle.addEventListener('mouseover', function(evt) {
           this.setAttribute('stroke-width', 10);
         });
         circle.addEventListener('mouseout', function(evt) {
-          this.setAttribute('stroke-width', 5);
+          this.setAttribute('stroke-width', 3);
         });
         circle.addEventListener('mouseup', function(evt) {
           if (start == null) {
@@ -373,7 +375,7 @@ window.Racing = {
               x: parseInt(start.x),
               y: parseInt(start.y)
             })
-            polygon.push([lonlat.lon, lonlat.lat]);
+            polygon.push([lonlat.lon.toFixed(2), lonlat.lat.toFixed(2)]);
           } else {
             end = {
               x: this.getAttribute('cx'),
@@ -383,18 +385,19 @@ window.Racing = {
               x: parseInt(end.x),
               y: parseInt(end.y)
             })
-            polygon.push([lonlat.lon, lonlat.lat]);
-            var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            polygon.push([lonlat.lon.toFixed(2), lonlat.lat.toFixed(2)]);
+            var line = document.createElementNS(Racing.SVG, 'line');
             line.setAttribute('x1', start.x);
             line.setAttribute('y1', start.y);
             line.setAttribute('x2', end.x);
             line.setAttribute('y2', end.y);
             line.setAttribute('stroke', 'yellow');
-            line.setAttribute('stroke-width', 5);
+            line.setAttribute('stroke-width', 3);
             svg.appendChild(line);
             start = end;
             if (polygon[0][0] == polygon[polygon.length - 1][0] && polygon[0][1] == polygon[polygon.length - 1][1]) {
-              console.log(JSON.stringify(polygon));
+              polygon.pop();
+              console.log(JSON.stringify(polygon).replace(/"/g, ''));
             }
           }
         });
@@ -409,9 +412,7 @@ window.Racing = {
             yj = p[j].y;
             var x = Math.round((xi + xj) / 2);
             var y = Math.round((yi + yj) / 2);
-            var lineStart = Racing.pixel(data, imageWidth, xi, yi);
             var lineMiddle = Racing.pixel(data, imageWidth, x, y);
-            var lineEnd = Racing.pixel(data, imageWidth, xj, yj);
             if (lineMiddle === '0 0 0 255') {
               var line = xj + ',' + yj + ' ' + xi + ', ' + yi;
               if (linesFound.indexOf(line) == -1) {
@@ -433,60 +434,6 @@ window.Racing = {
         }
       }
       Racing.log('Found ' + linesFound.length + ' Lines');
-      /*var myCanvas = document.createElement('canvas');
-      myCanvas.setAttribute('id', 'my_canvas');
-      myCanvas.width = Racing.canvas.width;
-      myCanvas.height = Racing.canvas.height;
-      myCanvas.style.cssText = Racing.canvas.style.cssText;
-      myCanvas.style.zIndex = Racing.canvas.style.zIndex + 1;
-      myCanvas.style.backgroundColor = '#555';
-      document.body.appendChild(myCanvas);
-      lines = [];*/
-      /*for (var i = 0; i < l.length; i++) {
-        var line = l[i];
-        var from = line.from;
-        var to = line.to;
-        var line = new Line([{
-          x: from.x,
-          y: from.y
-        }, {
-          x: to.x,
-          y: to.y
-        }]);
-        lines.push(line);
-        Racing.log('Line from ' + from.x + ',' + from.y + ' to ' + to.x + ',' + to.y);
-      }
-      document.getElementById('my_canvas').onmouseup = function(e) {
-        var canvas = document.getElementById('my_canvas');
-        var ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        for (var i = 0; i < lines.length; i++) {
-          var line = lines[i];
-          line.select(false);
-          if (line.hitTestPoint(e, 5)) {
-            line.select(true);
-          }
-        }
-      };*/
-      /*var colors = {};
-      for (var y = 0; y < imageHeight; y++) {
-        for (var x = 0; x < imageWidth; x++) {
-          var red = data[((imageWidth * y) + x) * 4];
-          var green = data[((imageWidth * y) + x) * 4 + 1];
-          var blue = data[((imageWidth * y) + x) * 4 + 2];
-          var alpha = data[((imageWidth * y) + x) * 4 + 3];
-          var color = red + ' ' + green + ' ' + blue + ' ' + alpha;
-          if (color == '255 255 255 255') {
-            data[((imageWidth * y) + x) * 4 + 3] = 0;
-          }
-          if (colors[color] == null) {
-            colors[color] = 1;
-          } else {
-            colors[color]++;
-          }
-        }
-      }
-      Racing.canvas.style.backgroundColor = 'none';*/
       Racing.log('Done');
     }
   },
