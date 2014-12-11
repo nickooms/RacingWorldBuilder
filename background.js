@@ -1,5 +1,6 @@
 var baseURL = 'http://geo-vlaanderen.agiv.be/gdiviewer/';
 var proxyURL = 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms??LAYERS=GRB_WBN&EXCEPTIONS=XML&FORMAT=image%2Fpng&TRANSPARENT=TRUE&VERSION=1.3.0&SERVICE=WMS&REQUEST=GetMap&STYLES=&ISBASELAYER=false&REALMINSCALE=75000&REALMAXSCALE=250&CRS=EPSG%3A31370&BBOX=';
+var proxyURL2 = 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms??LAYERS=GRB_WGO&EXCEPTIONS=XML&FORMAT=image%2Fpng&TRANSPARENT=TRUE&VERSION=1.3.0&SERVICE=WMS&REQUEST=GetMap&STYLES=&ISBASELAYER=false&REALMINSCALE=1500&REALMAXSCALE=250&CRS=EPSG%3A31370&BBOX=';
 function checkForValidUrl(tabId, changeInfo, tab) {
   if (tab.url.indexOf(baseURL) == 0) {
     chrome.pageAction.show(tabId);
@@ -98,7 +99,7 @@ chrome.webRequest.onBeforeRequest.addListener(function(details) {
           };
         default:
           if (url.indexOf(proxyURL) == 0) {
-            var key = url.replace(proxyURL, '');
+            var key = url.replace(proxyURL, 'GRB_WBN');
             var cachedImage = window.localStorage.getItem(key);
             if (cachedImage == null) {
               var img = new Image();
@@ -108,7 +109,7 @@ chrome.webRequest.onBeforeRequest.addListener(function(details) {
                 canvas.height = 512;
                 var context = canvas.getContext('2d');
                 context.drawImage(this, 0, 0, canvas.width, canvas.height);
-                var key = this.src.replace(proxyURL, '');
+                var key = this.src.replace(proxyURL, 'GRB_WBN');
                 window.localStorage.setItem(key, canvas.toDataURL());
               }
               img.src = url;
@@ -118,7 +119,29 @@ chrome.webRequest.onBeforeRequest.addListener(function(details) {
               };
             }
           } else {
-            console.log('TYPE ' + details.type + '\n' + url);
+            if (url.indexOf(proxyURL2) == 0) {
+              var key = url.replace(proxyURL2, 'GRB_WGO');
+              var cachedImage = window.localStorage.getItem(key);
+              if (cachedImage == null) {
+                var img = new Image();
+                img.onload = function() {
+                  var canvas = document.createElement('canvas');
+                  canvas.width = 512;
+                  canvas.height = 512;
+                  var context = canvas.getContext('2d');
+                  context.drawImage(this, 0, 0, canvas.width, canvas.height);
+                  var key = this.src.replace(proxyURL2, 'GRB_WGO');
+                  window.localStorage.setItem(key, canvas.toDataURL());
+                }
+                img.src = url;
+              } else {
+                return {
+                  redirectUrl: cachedImage
+                };
+              }
+            } else {
+              console.log('TYPE ' + details.type + '\n' + url);
+            }
           }
       }
       if (details.url == 'http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=GRB_BASISKAART&format=image/png&STYLE=default&SCALE=250.00000000000003') {
