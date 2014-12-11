@@ -178,22 +178,22 @@ chrome.webRequest.onBeforeRequest.addListener(function(details) {
       }
       if (details.url == 'http://grb.agiv.be/geodiensten/raadpleegdiensten/GRB-basiskaart/wms?LAYERS=GRB_BASISKAART&TRANSPARENT=FALSE&FORMAT=image%2Fpng&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&SRS=EPSG%3A31370&BBOX=238747.10016087,150000,347120.6502413,258373.55008043&WIDTH=512&HEIGHT=512') {
         return {
-          redirectUrl: chrome.extension.getURL('BBOX=238747.10016087,150000,347120.6502413,258373.55008043.png')
+          redirectUrl: chrome.extension.getURL('tiles/BBOX=238747.10016087,150000,347120.6502413,258373.55008043.png')
         };
       }
       if (details.url == 'http://grb.agiv.be/geodiensten/raadpleegdiensten/GRB-basiskaart/wms?LAYERS=GRB_BASISKAART&TRANSPARENT=FALSE&FORMAT=image%2Fpng&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&SRS=EPSG%3A31370&BBOX=22000,150000,130373.55008043,258373.55008043&WIDTH=512&HEIGHT=512') {
         return {
-          redirectUrl: chrome.extension.getURL('BBOX=22000,150000,130373.55008043,258373.55008043.png')
+          redirectUrl: chrome.extension.getURL('tiles/BBOX=22000,150000,130373.55008043,258373.55008043.png')
         }
       }
       if (details.url == 'http://grb.agiv.be/geodiensten/raadpleegdiensten/GRB-basiskaart/wms?LAYERS=GRB_BASISKAART&TRANSPARENT=FALSE&FORMAT=image%2Fpng&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&SRS=EPSG%3A31370&BBOX=130373.55008043,150000,238747.10016087,258373.55008043&WIDTH=512&HEIGHT=512') {
         return {
-          redirectUrl: chrome.extension.getURL('BBOX=130373.55008043,150000,238747.10016087,258373.55008043.png')
+          redirectUrl: chrome.extension.getURL('tiles/BBOX=130373.55008043,150000,238747.10016087,258373.55008043.png')
         }
       }
       if (details.url == 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.agiv.be/ogc/wms/navstreets?LAYERS=6&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&FORMAT=image%2Fjpeg&SRS=EPSG%3A31370&BBOX=22000,150000,359066.66666667,487066.66666667&WIDTH=256&HEIGHT=256') {
         return {
-          redirectUrl: chrome.extension.getURL('BBOX=22000,150000,359066.66666667,487066.66666667.jpg')
+          redirectUrl: chrome.extension.getURL('tiles/BBOX=22000,150000,359066.66666667,487066.66666667.jpg')
         }
       }
       if (details.url == 'http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms?version=1.3.0&service=WMS&request=GetLegendGraphic&sld_version=1.1.0&layer=GRB_BASISKAART&format=image/png&STYLE=default&SCALE=250.00000000000003') {
