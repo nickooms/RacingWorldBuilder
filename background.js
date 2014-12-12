@@ -1,6 +1,7 @@
 var baseURL = 'http://geo-vlaanderen.agiv.be/gdiviewer/';
 var proxyURL = 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms??LAYERS=GRB_WBN&EXCEPTIONS=XML&FORMAT=image%2Fpng&TRANSPARENT=TRUE&VERSION=1.3.0&SERVICE=WMS&REQUEST=GetMap&STYLES=&ISBASELAYER=false&REALMINSCALE=75000&REALMAXSCALE=250&CRS=EPSG%3A31370&BBOX=';
 var proxyURL2 = 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms??LAYERS=GRB_WGO&EXCEPTIONS=XML&FORMAT=image%2Fpng&TRANSPARENT=TRUE&VERSION=1.3.0&SERVICE=WMS&REQUEST=GetMap&STYLES=&ISBASELAYER=false&REALMINSCALE=1500&REALMAXSCALE=250&CRS=EPSG%3A31370&BBOX=';
+var proxyURL3 = 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms??LAYERS=GRB_GBG&EXCEPTIONS=XML&FORMAT=image%2Fpng&TRANSPARENT=TRUE&VERSION=1.3.0&SERVICE=WMS&REQUEST=GetMap&STYLES=&ISBASELAYER=false&REALMINSCALE=75000&REALMAXSCALE=250&CRS=EPSG%3A31370&BBOX=';
 function checkForValidUrl(tabId, changeInfo, tab) {
   if (tab.url.indexOf(baseURL) == 0) {
     chrome.pageAction.show(tabId);
@@ -140,7 +141,29 @@ chrome.webRequest.onBeforeRequest.addListener(function(details) {
                 };
               }
             } else {
-              console.log('TYPE ' + details.type + '\n' + url);
+              if (url.indexOf(proxyURL3) == 0) {
+                var key = url.replace(proxyURL3, 'GRB_GBG');
+                var cachedImage = window.localStorage.getItem(key);
+                if (cachedImage == null) {
+                  var img = new Image();
+                  img.onload = function() {
+                    var canvas = document.createElement('canvas');
+                    canvas.width = 512;
+                    canvas.height = 512;
+                    var context = canvas.getContext('2d');
+                    context.drawImage(this, 0, 0, canvas.width, canvas.height);
+                    var key = this.src.replace(proxyURL3, 'GRB_GBG');
+                    window.localStorage.setItem(key, canvas.toDataURL());
+                  }
+                  img.src = url;
+                } else {
+                  return {
+                    redirectUrl: cachedImage
+                  };
+                }
+              } else {
+                console.log('TYPE ' + details.type + '\n' + url);
+              }
             }
           }
       }
