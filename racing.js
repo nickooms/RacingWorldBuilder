@@ -58,7 +58,7 @@ window.Racing = {
         i = step + x;
         if (corners[i] > 0) {
           ctx.beginPath();
-          ctx.arc(x, y, 3, twopi, false);
+          ctx.arc(x, y, 2, twopi, false);
           ctx.closePath();
           ctx.fill();
           points.push({
@@ -90,7 +90,7 @@ window.Racing = {
     Racing.k = k;
     Racing.zoomToScale = zoomToScale;
     Racing.straatLine = straatLine;
-    Racing.straatLinePoint = straatLinePoint;
+    Racing.straatLinePoint = straatLinePoint.indexOf('-') != -1 ? straatLinePoint : parseInt(straatLinePoint);
     Racing.log('Activate Layer: Geen achtergrondlaag');
     Racing.activateLayerByName('Geen achtergrondlaag');
     Racing.removeLines();
@@ -182,6 +182,7 @@ window.Racing = {
         }
         fc.lines.push(lines);
       }
+      //console.log(fc);
       Racing.log('Straat: ' + features.length + ' Lines (' + linesLog.join(', ') + ' Points)');
       Racing.straat = fc;
       showCapabilitiesGrid();
@@ -200,13 +201,166 @@ window.Racing = {
     Racing.timer();
     //map.zoomToScale(Racing.zoomToScale);
     Racing.log('Zoomed To Scale: ' + Racing.zoomToScale);
-    var straatLinePoint = Racing.straat.lines[Racing.straatLine][Racing.straatLinePoint];
-    map.setCenter([straatLinePoint.x, straatLinePoint.y]);
-    map.zoomToScale(Racing.zoomToScale);
+    if (typeof Racing.straatLinePoint == 'string') {
+      var straatLinePoint1 = Racing.straat.lines[Racing.straatLine][parseInt(Racing.straatLinePoint.split('-')[0])];
+      var straatLinePoint2 = Racing.straat.lines[Racing.straatLine][parseInt(Racing.straatLinePoint.split('-')[1])];
+      /*var straatLinePoint = {
+        x: (straatLinePoint1.x + straatLinePoint2.x) / 2,
+        y: (straatLinePoint1.y + straatLinePoint2.y) / 2
+      };*/
+      var bounds = new OpenLayers.Bounds();
+      bounds.extend(new OpenLayers.LonLat(straatLinePoint1.x, straatLinePoint1.y));
+      bounds.extend(new OpenLayers.LonLat(straatLinePoint2.x, straatLinePoint2.y));
+      map.zoomToExtent(bounds, true);
+    } else {
+      var straatLinePoint = Racing.straat.lines[Racing.straatLine][Racing.straatLinePoint];
+      //map.setCenter([straatLinePoint.x, straatLinePoint.y]);
+      //map.zoomToScale(Racing.zoomToScale);
+      var bounds = new OpenLayers.Bounds();
+      bounds.extend(new OpenLayers.LonLat(straatLinePoint.x, straatLinePoint.y));
+      bounds.extend(new OpenLayers.LonLat(straatLinePoint.x, straatLinePoint.y));
+      map.zoomToExtent(bounds, true);
+    }
     Racing.activeLayer = Racing.layerByName(Racing.layerToActivate);
     Racing.log('Start Copy Layer ' + Racing.layerToActivateName);
     Racing.timer();
     setTimeout(Racing.copyLayer, 0);
+  },
+  findKnownColors: function(canvas) {
+    var context = canvas.getContext('2d');
+    var imageWidth = canvas.width;
+    var imageHeight = canvas.height;
+    var imageData = context.getImageData(0, 0, imageWidth, imageHeight);
+    var data = imageData.data;
+    var colors = {};
+    for (var i = 0, n = data.length; i < n; i += 4) {
+      var red = data[i];
+      var green = data[i + 1];
+      var blue = data[i + 2];
+      var alpha = data[i + 3];
+      var color = '0x' + ((red * 256 * 256 * 256) + (green * 256 * 256) + (blue * 256) + alpha).toString(16).toUpperCase();
+      if (colors[color] == null) {
+        colors[color] = 1;
+      } else {
+        colors[color]++;
+      }
+      switch (color) {
+        case '0x0':
+        case '0xCCCCCCFF':
+        case '0xB7B7B7FF':
+        case '0xFA9B87FF':
+        case '0xFA7D69FF':
+          color = '0xFFFFFFFF';
+          red = green = blue = 255;
+          data[i] = data[i + 1] = data[i + 2] = 255;
+          alpha = 255;
+          data[i + 3] = 255;
+          break;
+        default:
+          if (color != '0xFFFFFFFF') {
+            color = '0x000000FF'
+            red = green = blue = 0;
+            data[i] = data[i + 1] = data[i + 2] = 0;
+            alpha =  255;
+            data[i + 3] = 255;
+          }
+      }
+    }
+    return {
+      colors: colors,
+      imageData: imageData
+    };
+  },
+  findRemainingColors: function(canvas) {
+    var context = canvas.getContext('2d');
+    var imageWidth = canvas.width;
+    var imageHeight = canvas.height;
+    var imageData = context.getImageData(0, 0, imageWidth, imageHeight);
+    var data = imageData.data;
+    var colors = {};
+    for (var i = 0, n = data.length; i < n; i += 4) {
+      var red = data[i];
+      var green = data[i + 1];
+      var blue = data[i + 2];
+      var alpha = data[i + 3];
+      //var color = red + ' ' + green + ' ' + blue + ' ' + alpha;
+      var color = '0x' + ((red * 256 * 256 * 256) + (green * 256 * 256) + (blue * 256) + alpha).toString(16).toUpperCase();
+      if (colors[color] == null) {
+        colors[color] = 1;
+      } else {
+        colors[color]++;
+      }
+    }
+    return {
+      imageData: imageData,
+      colors: colors
+    };
+  },
+  drawRemainingBlackLines: function(canvas) {
+    var context = canvas.getContext('2d');
+    var imageWidth = canvas.width;
+    var imageHeight = canvas.height;
+    var imageData = context.getImageData(0, 0, imageWidth, imageHeight);
+    var data = imageData.data;
+    context.fillStyle = '#000000';
+    var twopi = 2 * Math.PI;
+    for (var y = 0; y < imageHeight; y++) {
+      for (var x = 0; x < imageWidth; x++) {
+        var offset = ((imageWidth * y) + x) * 4;
+        var red = data[offset];
+        var green = data[offset + 1];
+        var blue = data[offset + 2];
+        var alpha = data[offset + 3];
+        if (red == 0 && green == 0 && blue == 0 && alpha == 255) {
+          context.beginPath();
+          context.arc(x, y, 1, twopi, false);
+          context.closePath();
+          context.fill();
+        }
+      }
+    }
+  },
+  findLines: function(canvas, points) {
+    var l = [];
+    var linesFound = [];
+    var xi, yi, xj, yj;
+    var context = canvas.getContext('2d');
+    var imageWidth = canvas.width;
+    var imageHeight = canvas.height;
+    var imageData = context.getImageData(0, 0, imageWidth, imageHeight);
+    var data = imageData.data;
+    for (var i = 0; i < points.length; i++) {
+      for (var j = 0; j < points.length; j++) {
+        if (i != j) {
+          xj = points[j].x;
+          yj = points[j].y;
+          var x = Math.round((xi + xj) / 2);
+          var y = Math.round((yi + yj) / 2);
+          var lineMiddle = Racing.pixel(data, imageWidth, x, y);
+          if (lineMiddle === '0 0 0 255') {
+            var line = xj + ',' + yj + ' ' + xi + ', ' + yi;
+            if (linesFound.indexOf(line) == -1) {
+              line = xi + ',' + yi + ' ' + xj + ', ' + yj;
+              linesFound.push(line);
+              l.push({
+                from: {
+                  x: xi,
+                  y: yi
+                },
+                to: {
+                  x: xj,
+                  y: yj
+                }
+              });
+            }
+          }
+        }
+      }
+    }
+    return {
+      linesFound: linesFound,
+      l: l
+    };
   },
   copyLayer: function(callback) {
     if (Racing.canvas == null) {
@@ -226,7 +380,7 @@ window.Racing = {
       canvas.style.left = 0;
       canvas.style.top = 0;
       canvas.style.zIndex = 6000;
-      canvas.style.backgroundColor = 'white';
+      canvas.style.backgroundColor = 'transparent';
       var position = layer.div.getBoundingClientRect();
       var grid = layer.grid;
       Racing.log('Loading ' + grid.length * grid[0].length + ' Tiles');
@@ -238,47 +392,13 @@ window.Racing = {
         }
       }
       Racing.log('Loaded ' + grid.length * grid[0].length + ' Tiles');
-      var imageWidth = canvas.width;
-      var imageHeight = canvas.height;
-      var imageData = context.getImageData(0, 0, imageWidth, imageHeight);
-      var data = imageData.data;
+      //return;
       Racing.log('Searching Known Colors');
       Racing.timer();
-      var colors = {};
-      for (var i = 0, n = data.length; i < n; i += 4) {
-        var red = data[i];
-        var green = data[i + 1];
-        var blue = data[i + 2];
-        var alpha = data[i + 3];
-        //var color = 'rgba(' + red + ',' + green + ',' + blue + ',' + 255 / alpha + ')';
-        var color = '0x' + ((red * 256 * 256 * 256) + (green * 256 * 256) + (blue * 256) + alpha).toString(16).toUpperCase();
-        if (colors[color] == null) {
-          colors[color] = 1;
-        } else {
-          colors[color]++;
-        }
-        switch (color) {
-          case '0x0':
-          case '0xCCCCCCFF':
-          case '0xB7B7B7FF':
-          case '0xFA9B87FF':
-          case '0xFA7D69FF':
-            color = '0xFFFFFFFF';
-            red = green = blue = 255;
-            data[i] = data[i + 1] = data[i + 2] = 255;
-            alpha = 255;
-            data[i + 3] = 255;
-            break;
-          default:
-            if (color != '0xFFFFFFFF') {
-              color = '0x000000FF'
-              red = green = blue = 0;
-              data[i] = data[i + 1] = data[i + 2] = 0;
-              alpha =  255;
-              data[i + 3] = 255;
-            }
-        }
-      }
+      var imageData = Racing.findKnownColors(Racing.canvas).imageData;
+      var data = imageData.data;
+      var imageWidth = canvas.width;
+      var imageHeight = canvas.height;
       Racing.log('Found Known Colors');
       //console.log(JSON.stringify(colors).split(',').join('\n'));
       Racing.timer();
@@ -286,41 +406,12 @@ window.Racing = {
       Racing.log('Removed Known Colors');
       Racing.log('Searching Remaining Colors');
       Racing.timer();
-      var colors = {};
-      for (var i = 0, n = data.length; i < n; i += 4) {
-        var red = data[i];
-        var green = data[i + 1];
-        var blue = data[i + 2];
-        var alpha = data[i + 3];
-        //var color = red + ' ' + green + ' ' + blue + ' ' + alpha;
-        var color = '0x' + ((red * 256 * 256 * 256) + (green * 256 * 256) + (blue * 256) + alpha).toString(16).toUpperCase();
-        if (colors[color] == null) {
-          colors[color] = 1;
-        } else {
-          colors[color]++;
-        }
-      }
+      var colors = Racing.findRemainingColors(Racing.canvas).colors;
       Racing.log('Found Remaining Colors');
       for (var color in colors) {
         Racing.log('Found color ' + color + ' : ' + colors[color] + ' pixels');
       }
-      context.fillStyle = '#000000';
-      var twopi = 2 * Math.PI;
-      for (var y = 0; y < imageHeight; y++) {
-        for (var x = 0; x < imageWidth; x++) {
-          var offset = ((imageWidth * y) + x) * 4;
-          var red = data[offset];
-          var green = data[offset + 1];
-          var blue = data[offset + 2];
-          var alpha = data[offset + 3];
-          if (red == 0 && green == 0 && blue == 0 && alpha == 255) {
-            context.beginPath();
-            context.arc(x, y, 1, twopi, false);
-            context.closePath();
-            context.fill();
-          }
-        }
-      }
+      Racing.drawRemainingBlackLines(canvas);
       Racing.log('Searching Corners');
       Racing.timer();
       var params = {
@@ -355,17 +446,20 @@ window.Racing = {
         circle.setAttribute('cx', xi);
         circle.setAttribute('cy', yi);
         circle.setAttribute('stroke', 'yellow');
-        circle.setAttribute('stroke-width', 3);
+        circle.setAttribute('stroke-width', 2);
         circle.setAttribute('fill', 'yellow');
-        circle.setAttribute('r', 3);
+        circle.setAttribute('r', 2);
         circle.setAttribute('class', 'circle');
         circle.addEventListener('mouseover', function(evt) {
           this.setAttribute('stroke-width', 10);
+          this.setAttribute('stroke', 'red');
         });
         circle.addEventListener('mouseout', function(evt) {
-          this.setAttribute('stroke-width', 3);
+          this.setAttribute('stroke-width', 2);
+          this.setAttribute('stroke', 'yellow');
         });
         circle.addEventListener('mouseup', function(evt) {
+          this.setAttribute('stroke', 'red');
           if (start == null) {
             start = {
               x: this.getAttribute('cx'),
@@ -374,7 +468,7 @@ window.Racing = {
             var lonlat = map.getLonLatFromPixel({
               x: parseInt(start.x),
               y: parseInt(start.y)
-            })
+            });
             polygon.push([lonlat.lon.toFixed(2), lonlat.lat.toFixed(2)]);
           } else {
             end = {
@@ -384,20 +478,24 @@ window.Racing = {
             var lonlat = map.getLonLatFromPixel({
               x: parseInt(end.x),
               y: parseInt(end.y)
-            })
+            });
             polygon.push([lonlat.lon.toFixed(2), lonlat.lat.toFixed(2)]);
             var line = document.createElementNS(Racing.SVG, 'line');
             line.setAttribute('x1', start.x);
             line.setAttribute('y1', start.y);
             line.setAttribute('x2', end.x);
             line.setAttribute('y2', end.y);
-            line.setAttribute('stroke', 'yellow');
-            line.setAttribute('stroke-width', 3);
+            line.setAttribute('stroke', 'red');
+            line.setAttribute('stroke-width', 2);
             svg.appendChild(line);
             start = end;
             if (polygon[0][0] == polygon[polygon.length - 1][0] && polygon[0][1] == polygon[polygon.length - 1][1]) {
               polygon.pop();
               console.log(JSON.stringify(polygon).replace(/"/g, ''));
+              start = null;
+              end = null;
+              polygons = [];
+              polygon = [];
             }
           }
         });
@@ -405,6 +503,7 @@ window.Racing = {
       }
       Racing.log('Searching Lines');
       Racing.timer();
+      //var linesFound = Racing.findLines(Racing.canvas, p).linesFound;
       for (var i = 0; i < p.length; i++) {
         for (var j = 0; j < p.length; j++) {
           if (i != j) {

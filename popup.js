@@ -26,7 +26,7 @@ window.onload = function() {
               k: document.querySelector('select#k').value,
               zoomToScale: parseInt(document.querySelector('select#zoomToScale').value),
               straatLine: parseInt(document.querySelector('select#straatLine').value),
-              straatLinePoint: parseInt(document.querySelector('select#straatLinePoint').value),
+              straatLinePoint: document.querySelector('select#straatLinePoint').value,
               layer: layer.value,
               layerName: layer.options[layer.selectedIndex].innerText
             });
