@@ -23,9 +23,9 @@
       <td>Street :</td>
       <td>
         <select id="straat">
-          <option value="Markt" selected="">Markt</option>
+          <option value="Markt">Markt</option>
           <option value="Frans Oomsplein">Frans Oomsplein</option>
-          <option value="Witvenstraat">Witvenstraat</option>
+          <option value="Witvenstraat" selected="">Witvenstraat</option>
           <option value="Hoge Weg">Hoge Weg</option>
           <option value="Hooghuisstraat">Hooghuisstraat</option>
           <option value="Kerkstraat">Kerkstraat</option>
@@ -34,6 +34,10 @@
           <option value="Molenstraat">Molenstraat</option>
           <option value="Antwerpsesteenweg">Antwerpsesteenweg</option>
           <option value="Lombaardstraat">Lombaardstraat</option>
+          <option value="Berkenlaan">Berkenlaan</option>
+          <option value="Wilgenlaan">Wilgenlaan</option>
+          <option value="Dennenlaan">Dennenlaan</option>
+          <option value="Platanenlaan">Platanenlaan</option>
           <option value="Engelselei">Engelselei</option>
           <option value="Dorpsstraat">Dorpsstraat</option>
           <option value="Hoevensebaan">Hoevensebaan</option>
@@ -44,6 +48,8 @@
           <option value="Oblatenlaan">Oblatenlaan</option>
           <option value="Zandstraat">Zandstraat</option>
           <option value="Grote Markt">Grote Markt</option>
+          <option value="Glasgowstraat">Glasgowstraat</option>
+          <option value="Philadelphiastraat">Philadelphiastraat</option>
           <option value="Gildekamersstraat">Gildekamersstraat</option>
           <option value="Suikerrui">Suikerrui</option>
           <option value="Meirbrug">Meirbrug</option>
@@ -53,10 +59,10 @@
     <tr>
       <td>Layer :</td>
       <td>
-        <select id="layer">
-          <option value="GRB_WBN">GRB - WBN - wegbaan</option>
-          <option value="GRB_WGO">GRB - WGO - wegopdeling</option>
-          <option value="GRB_GBG" selected="">GRB - GBG - gebouw aan de grond</option>
+        <select id="layer" multiple="multiple">
+          <option value="GRB_WBN" selected="">GRB - WBN - wegbaan</option>
+          <option value="GRB_WGO" selected="">GRB - WGO - wegopdeling</option>
+          <option value="GRB_GBG">GRB - GBG - gebouw aan de grond</option>
           <option value="GRB_WVB">GRB - WVB - wegverbinding</option>
         </select>
       </td>
@@ -65,10 +71,11 @@
       <td>K :</td>
       <td>
         <select id="k">
+          <option value="0.01" selected="">0.01</option>
           <option value="0.02">0.02</option>
           <option value="0.04">0.04</option>
           <option value="0.06">0.06</option>
-          <option value="0.08" selected="">0.08</option>
+          <option value="0.08">0.08</option>
           <option value="0.10">0.10</option>
           <option value="0.12">0.12</option>
           <option value="0.14">0.14</option>
@@ -95,7 +102,7 @@
       <td>Straat Line :</td>
       <td>
         <select id="straatLine">
-          <option value="0" selected="">0</option>
+          <option value="0">0</option>
           <option value="1">1</option>
           <option value="2">2</option>
           <option value="3">3</option>
@@ -104,7 +111,7 @@
           <option value="6">6</option>
           <option value="7">7</option>
           <option value="8">8</option>
-          <option value="9">9</option>
+          <option value="9" selected="">9</option>
           <option value="10">10</option>
           <option value="11">11</option>
           <option value="12">12</option>

@@ -19,6 +19,12 @@ window.onload = function() {
         switch (action) {
           case 'showGemeente':
             var layer = document.querySelector('select#layer');
+            var layers = [];
+            var layerNames = [];
+            for (var j = 0; j < layer.selectedOptions.length; j++) {
+              layers.push(layer.selectedOptions[j].value);
+              layerNames.push(layer.selectedOptions[j].firstChild.nodeValue);
+            }
             port.postMessage({
               action: 'showGemeente',
               gemeenteNaam: document.querySelector('select#gemeente').value,
@@ -28,7 +34,9 @@ window.onload = function() {
               straatLine: parseInt(document.querySelector('select#straatLine').value),
               straatLinePoint: document.querySelector('select#straatLinePoint').value,
               layer: layer.value,
-              layerName: layer.options[layer.selectedIndex].innerText
+              layerName: layer.options[layer.selectedIndex].firstChild.nodeValue,
+              layers: layers,
+              layerNames: layerNames
             });
             break;
           case 'copyLayer':
@@ -38,7 +46,7 @@ window.onload = function() {
               straatNaam: document.querySelector('select#straat').value,
               k: document.querySelector('select#k').value,
               layer: layer.value,
-              layerName: layer.options[layer.selectedIndex].innerText
+              layerName: layer.options[layer.selectedIndex].firstChild.nodeValue
             });
             break;
         }
