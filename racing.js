@@ -194,7 +194,6 @@ window.Racing = {
   addLayers: function() {
     Racing.log('Adding Layer: ' + Racing.layerToActivate);
     Racing.timer();
-    //Racing.addLayersByName([Racing.layerToActivate, 'GRB_WGO']);
     Racing.addLayersByName(Racing.layersToActivate);
     wmsWin.close();
     Racing.layerNames = map.layers.map(function(index, item) {
@@ -203,34 +202,26 @@ window.Racing = {
     Racing.log('Added Layer: ' + Racing.layerToActivate);
     Racing.log('Zooming To Scale: ' + Racing.zoomToScale);
     Racing.timer();
-    //map.zoomToScale(Racing.zoomToScale);
     Racing.log('Zoomed To Scale: ' + Racing.zoomToScale);
+    var bounds = new OpenLayers.Bounds();
     if (typeof Racing.straatLinePoint == 'string') {
       var straatLinePoint1 = Racing.straat.lines[Racing.straatLine][parseInt(Racing.straatLinePoint.split('-')[0])];
       var straatLinePoint2 = Racing.straat.lines[Racing.straatLine][parseInt(Racing.straatLinePoint.split('-')[1])];
-      /*var straatLinePoint = {
-        x: (straatLinePoint1.x + straatLinePoint2.x) / 2,
-        y: (straatLinePoint1.y + straatLinePoint2.y) / 2
-      };*/
-      var bounds = new OpenLayers.Bounds();
       bounds.extend(new OpenLayers.LonLat(straatLinePoint1.x, straatLinePoint1.y));
       bounds.extend(new OpenLayers.LonLat(straatLinePoint2.x, straatLinePoint2.y));
-      map.zoomToExtent(bounds, true);
     } else {
       var straatLinePoint = Racing.straat.lines[Racing.straatLine][Racing.straatLinePoint];
-      //map.setCenter([straatLinePoint.x, straatLinePoint.y]);
-      //map.zoomToScale(Racing.zoomToScale);
-      var bounds = new OpenLayers.Bounds();
       bounds.extend(new OpenLayers.LonLat(straatLinePoint.x, straatLinePoint.y));
       bounds.extend(new OpenLayers.LonLat(straatLinePoint.x, straatLinePoint.y));
-      map.zoomToExtent(bounds, true);
     }
+    map.zoomToExtent(bounds, true);
     Racing.activeLayer = Racing.layerByName(Racing.layerToActivate);
     Racing.log('Start Copy Layer ' + Racing.layerToActivateName);
     Racing.timer();
     setTimeout(Racing.copyLayer, 0);
   },
-  findKnownColorsORIGINAL: function(canvas) {
+  findKnownColors: function(canvas) {
+    var canvas = Racing.canvas;
     var context = canvas.getContext('2d');
     var imageWidth = canvas.width;
     var imageHeight = canvas.height;
@@ -254,12 +245,16 @@ window.Racing = {
         case '0xB7B7B7FF':
         case '0xFA9B87FF':
         case '0xFA7D69FF':
+        //case '0xBF00C8FF':
           color = '0xFFFFFFFF';
           red = green = blue = 255;
           data[i] = data[i + 1] = data[i + 2] = 255;
           alpha = 255;
           data[i + 3] = 255;
           break;
+        //case '0xBF00C8FF':
+        //  console.log('purple');
+        //  break;
         default:
           if (color != '0xFFFFFFFF') {
             color = '0x000000FF'
@@ -270,53 +265,18 @@ window.Racing = {
           }
       }
     }
-    return {
-      colors: colors,
-      imageData: imageData
-    };
+    //console.log(JSON.stringify(colors).split(',').join('\n'));
+    Racing.imageData = imageData;
+    Racing.log('Found Known Colors');
+    Racing.timer();
+    Racing.context.putImageData(Racing.imageData, 0, 0);
+    Racing.log('Removed Known Colors');
+    Racing.log('Searching Remaining Colors');
+    Racing.timer();
+    setTimeout(Racing.findRemainingColors, 0);
   },
-  findKnownColors: function(canvas) {
-    var context = canvas.getContext('2d');
-    var imageWidth = canvas.width;
-    var imageHeight = canvas.height;
-    var imageData = context.getImageData(0, 0, imageWidth, imageHeight);
-    var data = imageData.data;
-    var b = new ArrayBuffer(data.length);
-    var u32 = new Uint32Array(data.buffer);
-    var dv = new DataView(data.buffer);
-    var colors = {};
-    for (var i = 0, n = data.length / 4; i < n; i++) {
-      var color = u32[i];
-      if (colors[color] == null) {
-        colors[color] = 1;
-      } else {
-        colors[color]++;
-      }
-      switch (color) {
-        /*case '0x0':
-        case '0xF':
-        case '0xF00':
-        case '0xF0000':
-        case '0xF000000':*/
-        case 0xff697dfa:
-        case 0xff879bfa:
-          color = 0xffff;
-          u32[i] = 0xffff;
-          break;
-        default:
-          if (color != 0xffff) {
-            color = 0x000f;
-            u32[i] = 0x000f;
-          }
-      }
-    }
-    console.log(colors);
-    return {
-      colors: colors,
-      imageData: imageData
-    };
-  },
-  findRemainingColors: function(canvas) {
+  findRemainingColors: function() {
+    var canvas = Racing.canvas;
     var context = canvas.getContext('2d');
     var imageWidth = canvas.width;
     var imageHeight = canvas.height;
@@ -328,7 +288,6 @@ window.Racing = {
       var green = data[i + 1];
       var blue = data[i + 2];
       var alpha = data[i + 3];
-      //var color = red + ' ' + green + ' ' + blue + ' ' + alpha;
       var color = '0x' + ((red * 256 * 256 * 256) + (green * 256 * 256) + (blue * 256) + alpha).toString(16).toUpperCase();
       if (colors[color] == null) {
         colors[color] = 1;
@@ -336,12 +295,15 @@ window.Racing = {
         colors[color]++;
       }
     }
-    return {
-      imageData: imageData,
-      colors: colors
-    };
+    Racing.colors = colors;
+    Racing.log('Found Remaining Colors');
+    for (var color in Racing.colors) {
+      Racing.log('Found color ' + color + ' : ' + Racing.colors[color] + ' pixels');
+    }
+    setTimeout(Racing.drawRemainingBlackLines, 0);
   },
-  drawRemainingBlackLines: function(canvas) {
+  drawRemainingBlackLines: function() {
+    var canvas = Racing.canvas;
     var context = canvas.getContext('2d');
     var imageWidth = canvas.width;
     var imageHeight = canvas.height;
@@ -364,30 +326,32 @@ window.Racing = {
         }
       }
     }
+    Racing.log('Searching Corners');
+    Racing.timer();
+    setTimeout(Racing.findCorners, 0);
   },
-  findLines: function(canvas, points) {
-    var l = [];
-    var linesFound = [];
+  findLines: function() {
+    var imageWidth = Racing.canvas.width;
+    Racing.data = Racing.imageData.data;
+    Racing.l = [];
+    Racing.linesFound = [];
     var xi, yi, xj, yj;
-    var context = canvas.getContext('2d');
-    var imageWidth = canvas.width;
-    var imageHeight = canvas.height;
-    var imageData = context.getImageData(0, 0, imageWidth, imageHeight);
-    var data = imageData.data;
-    for (var i = 0; i < points.length; i++) {
-      for (var j = 0; j < points.length; j++) {
+    for (var i = 0; i < Racing.points.length; i++) {
+      xi = Racing.points[i].x;
+      yi = Racing.points[i].y;
+      for (var j = 0; j < Racing.points.length; j++) {
         if (i != j) {
-          xj = points[j].x;
-          yj = points[j].y;
+          xj = Racing.points[j].x;
+          yj = Racing.points[j].y;
           var x = Math.round((xi + xj) / 2);
           var y = Math.round((yi + yj) / 2);
-          var lineMiddle = Racing.pixel(data, imageWidth, x, y);
+          var lineMiddle = Racing.pixel(Racing.data, imageWidth, x, y);
           if (lineMiddle === '0 0 0 255') {
             var line = xj + ',' + yj + ' ' + xi + ', ' + yi;
-            if (linesFound.indexOf(line) == -1) {
+            if (Racing.linesFound.indexOf(line) == -1) {
               line = xi + ',' + yi + ' ' + xj + ', ' + yj;
-              linesFound.push(line);
-              l.push({
+              Racing.linesFound.push(line);
+              Racing.l.push({
                 from: {
                   x: xi,
                   y: yi
@@ -402,10 +366,18 @@ window.Racing = {
         }
       }
     }
-    return {
-      linesFound: linesFound,
-      l: l
-    };
+    Racing.log('Found ' + Racing.linesFound.length + ' Lines');
+    Racing.log('Done');
+  },
+  findCorners: function() {
+    Racing.corners = CornerDetector.detect(Racing.imageData, 'harris', {
+      qualityLevel: 0.01,
+      blockSize: 5,
+      k: parseFloat(Racing.k)
+    });
+    Racing.points = Racing.plotCorners(Racing.corners, Racing.context);
+    Racing.log('Found ' + Racing.points.length + ' Corners');
+    setTimeout(Racing.createCircles, 0);
   },
   createCanvas: function() {
     Racing.canvas = document.createElement('canvas');
@@ -435,6 +407,33 @@ window.Racing = {
     line.setAttribute('stroke-width', 2);
     Racing.svg.appendChild(line);
   },
+  createCircles: function() {
+    Racing.createSVG();
+    Racing.resetPolygon();
+    for (var i = 0; i < Racing.points.length; i++) {
+      var x = Racing.points[i].x;
+      var y = Racing.points[i].y;
+      Racing.createCircle(x, y);
+    }
+    Racing.log('Done');
+    //Racing.log('Searching Lines');
+    //Racing.timer();
+    //setTimeout(Racing.findLines, 0);
+  },
+  createCircle: function(x, y) {
+    var circle = document.createElementNS(Racing.SVG, 'circle');
+    circle.setAttribute('cx', x);
+    circle.setAttribute('cy', y);
+    circle.setAttribute('stroke', 'blue');
+    circle.setAttribute('stroke-width', 2);
+    circle.setAttribute('fill', 'blue');
+    circle.setAttribute('r', 2);
+    circle.setAttribute('class', 'circle');
+    circle.addEventListener('mouseover', Racing.circleOver);
+    circle.addEventListener('mouseout', Racing.circleOut);
+    circle.addEventListener('mouseup', Racing.circleUp);
+    Racing.svg.appendChild(circle);
+  },
   resetPolygon: function() {
     Racing.start = null;
     Racing.end = null;
@@ -449,6 +448,26 @@ window.Racing = {
     this.setAttribute('stroke-width', 2);
     this.setAttribute('stroke', 'blue');
   },
+  circleUp: function(evt) {
+    this.setAttribute('stroke', 'red');
+    var pixels = {
+      x: this.getAttribute('cx'),
+      y: this.getAttribute('cy')
+    };
+    var lonlat = map.getLonLatFromPixel({
+      x: parseInt(pixels.x),
+      y: parseInt(pixels.y)
+    });
+    Racing.polygon.push([lonlat.lon.toFixed(2), lonlat.lat.toFixed(2)]);
+    if (Racing.start == null) {
+      Racing.start = pixels;
+    } else {
+      Racing.end = pixels;
+      Racing.createLine();
+      Racing.start = Racing.end;
+      Racing.checkPolygonClosed();
+    }
+  },
   checkPolygonClosed: function() {
     var start = Racing.polygon[0];
     var end = Racing.polygon[Racing.polygon.length - 1];
@@ -461,27 +480,17 @@ window.Racing = {
   copyLayer: function(callback) {
     if (Racing.canvas == null) {
       Racing.createCanvas();
-      /*Racing.canvas = document.createElement('canvas');
-      document.body.appendChild(Racing.canvas);
-      Racing.context = Racing.canvas.getContext('2d');
-      Racing.canvas.style.position = 'absolute';
-      Racing.canvas.style.left = 0;
-      Racing.canvas.style.top = 0;
-      Racing.canvas.style.zIndex = 6000;
-      Racing.canvas.style.backgroundColor = 'transparent';*/
     }
     Racing.currentLayer = Racing.layerByName(Racing.layerToActivateName);
     if (Racing.currentLayer.loading) {
       setTimeout(Racing.copyLayer);
     } else {
-      Racing.log('Start Copy Layer ' + Racing.layerToActivateName + ' Loaded');
-      //var canvas = Racing.canvas;
-      //var context = Racing.context;
+      //Racing.log('Start Copy Layer ' + Racing.layerToActivateName + ' Loaded');
       var position = Racing.currentLayer.div.getBoundingClientRect();
       var grid = Racing.currentLayer.grid;
-      Racing.log('Loading ' + grid.length * grid[0].length + ' Tiles');
+      Racing.log('Loading ' + Racing.layerToActivateName + ' (' + grid.length * grid[0].length + ' Tiles)');
       if (Racing.layerToActivate == Racing.layersToActivate[1]) {
-        Racing.context.globalCompositeOperation = 'overlay';
+        Racing.context.globalCompositeOperation = 'xor';//'source-over';
       } else {
         Racing.canvas.width = Racing.currentLayer.div.scrollWidth;
         Racing.canvas.height = Racing.currentLayer.div.scrollHeight;
@@ -505,166 +514,7 @@ window.Racing = {
       }
       Racing.log('Searching Known Colors');
       Racing.timer();
-      Racing.imageData = Racing.findKnownColorsORIGINAL(Racing.canvas).imageData;
-      //Racing.data = Racing.imageData.data;
-      //var imageWidth = canvas.width;
-      //var imageHeight = canvas.height;
-      Racing.log('Found Known Colors');
-      Racing.timer();
-      Racing.context.putImageData(Racing.imageData, 0, 0);
-      Racing.log('Removed Known Colors');
-      /*Racing.log('Searching Remaining Colors');
-      Racing.timer();
-      var colors = Racing.findRemainingColors(Racing.canvas).colors;
-      Racing.log('Found Remaining Colors');
-      for (var color in colors) {
-        Racing.log('Found color ' + color + ' : ' + colors[color] + ' pixels');
-      }*/
-      Racing.drawRemainingBlackLines(Racing.canvas);
-      Racing.log('Searching Corners');
-      Racing.timer();
-      /*var params = {
-        qualityLevel: 0.01,
-        blockSize: 5,
-        k: parseFloat(Racing.k)
-      };*/
-      Racing.corners = CornerDetector.detect(Racing.imageData, 'harris', {
-        qualityLevel: 0.01,
-        blockSize: 5,
-        k: parseFloat(Racing.k)
-      });
-      Racing.points = Racing.plotCorners(Racing.corners, Racing.context);
-      Racing.log('Found ' + Racing.points.length + ' Corners');
-      //var lineColors = ['#FF0000'];
-      //var lineColorIndex = 0;
-      //var lines = [];
-      //var xi, yi, xj, yj;
-      Racing.createSVG();
-      /*Racing.svg = document.createElementNS(Racing.SVG, 'svg');
-      Racing.svg.setAttribute('width', canvas.getAttribute('width'));
-      Racing.svg.setAttribute('height', canvas.getAttribute('height'));
-      Racing.svg.style.position = 'absolute';
-      Racing.svg.style.zIndex = canvas.style.zIndex + 1;
-      document.body.appendChild(Racing.svg);*/
-      Racing.resetPolygon();
-      /*Racing.start = null;
-      Racing.end = null;
-      Racing.polygons = [];
-      Racing.polygon = [];*/
-      for (var i = 0; i < Racing.points.length; i++) {
-        var x = Racing.points[i].x;
-        var y = Racing.points[i].y;
-        var circle = document.createElementNS(Racing.SVG, 'circle');
-        circle.setAttribute('cx', x);
-        circle.setAttribute('cy', y);
-        circle.setAttribute('stroke', 'blue');
-        circle.setAttribute('stroke-width', 2);
-        circle.setAttribute('fill', 'blue');
-        circle.setAttribute('r', 2);
-        circle.setAttribute('class', 'circle');
-        circle.addEventListener('mouseover', Racing.circleOver/*function(evt) {
-          this.setAttribute('stroke-width', 10);
-          this.setAttribute('stroke', 'red');
-        }*/);
-        circle.addEventListener('mouseout', Racing.circleOut/*function(evt) {
-          this.setAttribute('stroke-width', 2);
-          this.setAttribute('stroke', 'blue');
-        }*/);
-        circle.addEventListener('mouseup', function(evt) {
-          this.setAttribute('stroke', 'red');
-          var pixels = {
-            x: this.getAttribute('cx'),
-            y: this.getAttribute('cy')
-          };
-          var lonlat = map.getLonLatFromPixel({
-            x: parseInt(pixels.x),
-            y: parseInt(pixels.y)
-          });
-          Racing.polygon.push([lonlat.lon.toFixed(2), lonlat.lat.toFixed(2)]);
-          if (Racing.start == null) {
-            Racing.start = pixels;/*{
-              x: this.getAttribute('cx'),
-              y: this.getAttribute('cy')
-            }*/
-            /*var lonlat = map.getLonLatFromPixel({
-              x: parseInt(Racing.start.x),
-              y: parseInt(Racing.start.y)
-            });*/
-            //Racing.polygon.push([lonlat.lon.toFixed(2), lonlat.lat.toFixed(2)]);
-          } else {
-            Racing.end = pixels;/*{
-              x: this.getAttribute('cx'),
-              y: this.getAttribute('cy')
-            }*/
-            /*var lonlat = map.getLonLatFromPixel({
-              x: parseInt(Racing.end.x),
-              y: parseInt(Racing.end.y)
-            });*/
-            //Racing.polygon.push([lonlat.lon.toFixed(2), lonlat.lat.toFixed(2)]);
-            Racing.createLine();
-            /*var line = document.createElementNS(Racing.SVG, 'line');
-            line.setAttribute('x1', Racing.start.x);
-            line.setAttribute('y1', Racing.start.y);
-            line.setAttribute('x2', Racing.end.x);
-            line.setAttribute('y2', Racing.end.y);
-            line.setAttribute('stroke', 'red');
-            line.setAttribute('stroke-width', 2);
-            Racing.svg.appendChild(line);*/
-            Racing.start = Racing.end;
-            Racing.checkPolygonClosed();
-            //if (Racing.polygon[0][0] == Racing.polygon[Racing.polygon.length - 1][0] && Racing.polygon[0][1] == Racing.polygon[Racing.polygon.length - 1][1]) {
-            //  Racing.polygon.pop();
-            //  console.log(JSON.stringify(Racing.polygon).replace(/"/g, ''));
-            //  Racing.resetPolygon();
-              /*Racing.start = null;
-              Racing.end = null;
-              Racing.polygons = [];
-              Racing.polygon = [];*/
-            //}
-          }
-        });
-        Racing.svg.appendChild(circle);
-      }
-      Racing.log('Searching Lines');
-      Racing.timer();
-      //var linesFound = Racing.findLines(Racing.canvas, Racing.p).linesFound;
-      var imageWidth = Racing.canvas.width;
-      Racing.data = Racing.imageData.data;
-      Racing.l = [];
-      Racing.linesFound = [];
-      var xi, yi, xj, yj;
-      for (var i = 0; i < Racing.points.length; i++) {
-        xi = Racing.points[i].x;
-        yi = Racing.points[i].y;
-        for (var j = 0; j < Racing.points.length; j++) {
-          if (i != j) {
-            xj = Racing.points[j].x;
-            yj = Racing.points[j].y;
-            var x = Math.round((xi + xj) / 2);
-            var y = Math.round((yi + yj) / 2);
-            var lineMiddle = Racing.pixel(Racing.data, imageWidth, x, y);
-            if (lineMiddle === '0 0 0 255') {
-              var line = xj + ',' + yj + ' ' + xi + ', ' + yi;
-              if (Racing.linesFound.indexOf(line) == -1) {
-                line = xi + ',' + yi + ' ' + xj + ', ' + yj;
-                Racing.linesFound.push(line);
-                Racing.l.push({
-                  from: {
-                    x: xi,
-                    y: yi
-                  },
-                  to: {
-                    x: xj,
-                    y: yj
-                  }
-                });
-              }
-            }
-          }
-        }
-      }
-      Racing.log('Found ' + Racing.linesFound.length + ' Lines');
-      Racing.log('Done');
+      setTimeout(Racing.findKnownColors, 0);
     }
   },
   closeMenu: function() {
