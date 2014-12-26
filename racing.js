@@ -156,21 +156,22 @@ window.Racing = {
         gemeenteNaam: Racing.gemeenteNaam,
         straatNaam: Racing.straatNaam,
         bounds: {
-          minX: 999999,
-          minY: 999999,
-          maxX: 0,
-          maxY: 0
+          minX: null,
+          minY: null,
+          maxX: null,
+          maxY: null
         },
         lines: []
       }
       var bounds = fc.bounds;
       for (var i = 0; i < features.length; i++) {
         var b = features[i].geometry.bounds;
-        bounds.minX = Math.max(bounds.minX, b.left);
-        bounds.maxX = Math.min(bounds.maxX, b.right);
-        bounds.minY = Math.max(bounds.minY, b.bottom);
-        bounds.maxY = Math.min(bounds.maxY, b.top);
+        bounds.minX = bounds.minX ? Math.min(bounds.minX, b.left) : b.left;
+        bounds.maxX = bounds.maxX ? Math.max(bounds.maxX, b.right) : b.right;
+        bounds.minY = bounds.minY ? Math.min(bounds.minY, b.bottom) : b.bottom;
+        bounds.maxY = bounds.maxY ? Math.max(bounds.maxY, b.top) : b.top;
       }
+      var uniquePoints = {};
       var linesLog = [];
       for (var i = 0; i < features.length; i++) {
         var g = features[i].geometry;
@@ -178,16 +179,41 @@ window.Racing = {
         linesLog.push(g.components.length);
         for (var j = 0; j < g.components.length; j++) {
           var c = g.components[j];
-          lines.push({
+          var line = {
             x: c.x,
             y: c.y
-          });
+          };
+          lines.push(line);
+          uniquePoints[c.x + ',' + c.y] = line;
         }
         fc.lines.push(lines);
       }
-      //console.log(fc);
+      var points = [];
+      for (var i in uniquePoints) {
+        points.push(uniquePoints[i]);
+      }
+      points.sort(function(a, b) {
+        return a.x < b.x ? -1 : 1;
+      });
+      for (var i = 0; i < fc.lines.length; i++) {
+        for (var j = 0; j < fc.lines[i].length; j++) {
+          for (var k = 0; k < points.length; k++) {
+            if (fc.lines[i][j].x == points[k].x && fc.lines[i][j].y == points[k].y) {
+              fc.lines[i][j].point = k;
+            }
+          }
+        }
+      }
+      cachedStraat = window.localStorage.getItem('straat:' + Racing.straatNaam);
+      //if (cachedStraat == null) {
+      window.localStorage.setItem('straat:' + Racing.straatNaam, JSON.stringify(fc));
+      //}
+      console.log(fc);
+      console.log(points);
       Racing.log('Straat: ' + features.length + ' Lines (' + linesLog.join(', ') + ' Points)');
+      Racing.points = points;
       Racing.straat = fc;
+      Racing.straatPunt = 0;
       showCapabilitiesGrid();
     }
   },
@@ -204,7 +230,10 @@ window.Racing = {
     Racing.timer();
     Racing.log('Zoomed To Scale: ' + Racing.zoomToScale);
     var bounds = new OpenLayers.Bounds();
-    if (typeof Racing.straatLinePoint == 'string') {
+    var straatLinePoint = Racing.points[Racing.straatPunt];
+    bounds.extend(new OpenLayers.LonLat(straatLinePoint.x, straatLinePoint.y));
+    bounds.extend(new OpenLayers.LonLat(straatLinePoint.x, straatLinePoint.y));
+    /*if (typeof Racing.straatLinePoint == 'string') {
       var straatLinePoint1 = Racing.straat.lines[Racing.straatLine][parseInt(Racing.straatLinePoint.split('-')[0])];
       var straatLinePoint2 = Racing.straat.lines[Racing.straatLine][parseInt(Racing.straatLinePoint.split('-')[1])];
       bounds.extend(new OpenLayers.LonLat(straatLinePoint1.x, straatLinePoint1.y));
@@ -213,7 +242,7 @@ window.Racing = {
       var straatLinePoint = Racing.straat.lines[Racing.straatLine][Racing.straatLinePoint];
       bounds.extend(new OpenLayers.LonLat(straatLinePoint.x, straatLinePoint.y));
       bounds.extend(new OpenLayers.LonLat(straatLinePoint.x, straatLinePoint.y));
-    }
+    }*/
     map.zoomToExtent(bounds, true);
     Racing.activeLayer = Racing.layerByName(Racing.layerToActivate);
     Racing.log('Start Copy Layer ' + Racing.layerToActivateName);
@@ -241,10 +270,18 @@ window.Racing = {
       }
       switch (color) {
         case '0x0':
+        //WBN
         case '0xCCCCCCFF':
         case '0xB7B7B7FF':
         case '0xFA9B87FF':
         case '0xFA7D69FF':
+        //WGO        
+        case '0xBF00C8FF':
+        case '0xBE00C7FF':
+        case '0xFED600FF':
+        case '0xFFD700FF':
+        case '0x984C00FF':
+        case '0x974B00FF':
         //case '0xBF00C8FF':
           color = '0xFFFFFFFF';
           red = green = blue = 255;
@@ -483,26 +520,54 @@ window.Racing = {
     }
     Racing.currentLayer = Racing.layerByName(Racing.layerToActivateName);
     if (Racing.currentLayer.loading) {
-      setTimeout(Racing.copyLayer);
+      setTimeout(Racing.copyLayer, 0);
     } else {
-      //Racing.log('Start Copy Layer ' + Racing.layerToActivateName + ' Loaded');
-      var position = Racing.currentLayer.div.getBoundingClientRect();
+      var loaded = true;
       var grid = Racing.currentLayer.grid;
-      Racing.log('Loading ' + Racing.layerToActivateName + ' (' + grid.length * grid[0].length + ' Tiles)');
-      if (Racing.layerToActivate == Racing.layersToActivate[1]) {
-        Racing.context.globalCompositeOperation = 'xor';//'source-over';
-      } else {
-        Racing.canvas.width = Racing.currentLayer.div.scrollWidth;
-        Racing.canvas.height = Racing.currentLayer.div.scrollHeight;
-      }
-      Racing.timer();
       var gridColumns = grid.length;
       for (var x = 0; x < gridColumns; x++) {
         var gridColumn = grid[x];
         var gridRows = gridColumn.length;
         for (var y = 0; y < gridRows; y++) {
           var tile = gridColumn[y];
-          Racing.context.drawImage(tile.imgDiv, tile.position.x + position.left, tile.position.y + position.top, tile.size.w, tile.size.h);
+          if (tile.imgDiv == null) {
+            loaded = false;
+          }
+        }
+      }
+      if (!loaded) {
+        setTimeout(Racing.copyLayer, 0);
+        return;
+      }
+      //Racing.log('Start Copy Layer ' + Racing.layerToActivateName + ' Loaded');
+      var position = Racing.currentLayer.div.getBoundingClientRect();
+      
+      Racing.log('Loading ' + Racing.layerToActivateName + ' (' + grid.length * grid[0].length + ' Tiles)');
+      if (Racing.layerToActivate == Racing.layersToActivate[1]) {
+        Racing.context.globalCompositeOperation = 'xor';//'source-over';
+      } else {
+        Racing.context.globalCompositeOperation = 'source-over';
+        if (Racing.straatPunt == 0) {
+          Racing.canvas.width = 512;//Racing.currentLayer.div.scrollWidth;
+          Racing.canvas.height = 512;//Racing.currentLayer.div.scrollHeight;
+        }
+      }
+      Racing.timer();
+      for (var x = 0; x < gridColumns; x++) {
+        var gridColumn = grid[x];
+        var gridRows = gridColumn.length;
+        for (var y = 0; y < gridRows; y++) {
+          var tile = gridColumn[y];
+          if (Racing.layerToActivate != Racing.layersToActivate[0]) {
+            Racing.context.clearRect(0, 0, 512, 512);
+          }
+          Racing.context.drawImage(tile.imgDiv, 0/*tile.position.x + position.left*/,0 /*tile.position.y + position.top*/, tile.size.w, tile.size.h);
+          chrome.runtime.sendMessage('anoednchafajddgcjghfampiefekeoca', {
+            base64: Racing.canvas.toDataURL('image/png'),
+            url: tile.url.split('BBOX=')[1]
+          }, function(response) { 
+            //console.log('response: ' + JSON.stringify(response));
+          });
         }
       }
       Racing.log('Loaded ' + grid.length * grid[0].length + ' Tiles');
@@ -512,9 +577,25 @@ window.Racing = {
         setTimeout(Racing.copyLayer, 0);
         return;
       }
-      Racing.log('Searching Known Colors');
+      if (Racing.straatPunt < Racing.points.length - 1) {
+        Racing.straatPunt++;
+        Racing.layerToActivate = Racing.layersToActivate[0];
+        Racing.layerToActivateName = Racing.layersToActivateName[0];
+        Racing.activeLayer = Racing.layerByName(Racing.layerToActivate);
+        var bounds = new OpenLayers.Bounds();
+        var straatLinePoint = Racing.points[Racing.straatPunt];
+        bounds.extend(new OpenLayers.LonLat(straatLinePoint.x, straatLinePoint.y));
+        bounds.extend(new OpenLayers.LonLat(straatLinePoint.x, straatLinePoint.y));
+        map.zoomToExtent(bounds, true);
+        Racing.log('Start Copy Layer ' + Racing.layerToActivateName);
+        Racing.timer();
+        setTimeout(Racing.copyLayer, 0);
+      } else {
+
+      }
+      /*Racing.log('Searching Known Colors');
       Racing.timer();
-      setTimeout(Racing.findKnownColors, 0);
+      setTimeout(Racing.findKnownColors, 0);*/
     }
   },
   closeMenu: function() {

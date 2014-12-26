@@ -48,6 +48,7 @@
     "webRequestBlocking",
     "tabs",
     "storage",
+    "management",
     "unlimitedStorage",
     //"fileSystem",
     "http://geo-vlaanderen.agiv.be/gdiviewer/*",

@@ -2,6 +2,22 @@ var baseURL = 'http://geo-vlaanderen.agiv.be/gdiviewer/';
 var proxyURL = 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms??LAYERS=GRB_WBN&EXCEPTIONS=XML&FORMAT=image%2Fpng&TRANSPARENT=TRUE&VERSION=1.3.0&SERVICE=WMS&REQUEST=GetMap&STYLES=&ISBASELAYER=false&REALMINSCALE=75000&REALMAXSCALE=250&CRS=EPSG%3A31370&BBOX=';
 var proxyURL2 = 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms??LAYERS=GRB_WGO&EXCEPTIONS=XML&FORMAT=image%2Fpng&TRANSPARENT=TRUE&VERSION=1.3.0&SERVICE=WMS&REQUEST=GetMap&STYLES=&ISBASELAYER=false&REALMINSCALE=1500&REALMAXSCALE=250&CRS=EPSG%3A31370&BBOX=';
 var proxyURL3 = 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms??LAYERS=GRB_GBG&EXCEPTIONS=XML&FORMAT=image%2Fpng&TRANSPARENT=TRUE&VERSION=1.3.0&SERVICE=WMS&REQUEST=GetMap&STYLES=&ISBASELAYER=false&REALMINSCALE=75000&REALMAXSCALE=250&CRS=EPSG%3A31370&BBOX=';
+var RACING_ID;
+var RACING_WORLD_BUILDER_APP_ID;
+chrome.management.getAll(function(exts) {
+  exts.forEach(function(ext) {
+    switch (ext.description) {
+      case 'Nick Ooms Racing Development':
+        RACING_ID = ext.id;
+        break;
+      case 'Nick Ooms Racing World Builder App':
+        RACING_WORLD_BUILDER_APP_ID = ext.id;
+        break;
+    }
+  });
+  //console.log(JSON.stringify(extensions));
+  //console.log(RACING_ID);
+});
 function checkForValidUrl(tabId, changeInfo, tab) {
   if (tab.url.indexOf(baseURL) == 0) {
     chrome.pageAction.show(tabId);
