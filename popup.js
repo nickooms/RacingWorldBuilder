@@ -1,5 +1,25 @@
 var action = 'showGemeente';
 window.onload = function() {
+  var selects = document.querySelectorAll('select');
+  for (var i = 0; i < selects.length; i++) {
+    var id = selects[i].getAttribute('id');
+    var selectedOptions = JSON.parse(window.localStorage.getItem('select_' + id));
+    var options = selects[i].options;
+    for (var j = 0; j < options.length; j++) {
+      if (selectedOptions && selectedOptions.indexOf(selects[i].options[j].value) != -1) {
+        options[j].selected = 'selected';
+      } else {
+        options[j].removeAttribute('selected');
+      }
+    }
+    selects[i].onchange = function() {
+      var selectedOptions = [];
+      for (var j = 0; j < this.selectedOptions.length; j++) {
+        selectedOptions.push(this.selectedOptions[j].value);
+      }
+      window.localStorage.setItem('select_' + this.getAttribute('id'), JSON.stringify(selectedOptions));
+    };
+  }
   var buttons = document.querySelectorAll('button');
   for (var i = 0; i < buttons.length; i++) {
     buttons[i].onclick = function() {

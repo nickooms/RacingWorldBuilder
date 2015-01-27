@@ -1,4 +1,5 @@
 window.Racing = {
+  APP_ID: 'anoednchafajddgcjghfampiefekeoca',
   SVG: 'http://www.w3.org/2000/svg',
   addLayersTimeout: 0,
   vecLayer: null,
@@ -95,7 +96,7 @@ window.Racing = {
     Racing.straatLine = straatLine;
     Racing.straatLinePoint = straatLinePoint.indexOf('-') != -1 ? straatLinePoint : parseInt(straatLinePoint);
     Racing.log('Activate Layer: Geen achtergrondlaag');
-    Racing.activateLayerByName('Geen achtergrondlaag');
+    Racing.activateLayerByName(Racing.layerToActivate == 'ortho' ? 'Luchtfoto' : 'Geen achtergrondlaag');
     Racing.removeLines();
     var searchpanelCrab = document.getElementById('searchpanelCrab');
     var searchpanelCrabForm = searchpanelCrab.querySelectorAll('form')[0];
@@ -173,6 +174,7 @@ window.Racing = {
       }
       var uniquePoints = {};
       var linesLog = [];
+      //console.log(features.length);
       for (var i = 0; i < features.length; i++) {
         var g = features[i].geometry;
         var lines = [];
@@ -195,6 +197,7 @@ window.Racing = {
       points.sort(function(a, b) {
         return a.x < b.x ? -1 : 1;
       });
+      console.log('===========================================================================');
       for (var i = 0; i < fc.lines.length; i++) {
         for (var j = 0; j < fc.lines[i].length; j++) {
           for (var k = 0; k < points.length; k++) {
@@ -205,15 +208,111 @@ window.Racing = {
         }
       }
       cachedStraat = window.localStorage.getItem('straat:' + Racing.straatNaam);
-      //if (cachedStraat == null) {
       window.localStorage.setItem('straat:' + Racing.straatNaam, JSON.stringify(fc));
-      //}
-      console.log(fc);
-      console.log(points);
+      var pointsData = points.map(function(point) {
+        return {
+          x: point.x,
+          y: point.y
+        };
+      })
+      var linesData = fc.lines.map(function(line) {
+        return line.map(function(l) {
+          return l.point;
+        });
+      });
+      var totalDist = 0;
+      var extraPoints = [];
+      var extraLines = [];
+      for (var i = 0; i < linesData.length; i++) {
+        console.log('Line ' + (i + 1) + '/' + linesData.length);
+        var lineData = linesData[i];
+        console.log('Line = ' + JSON.stringify(lineData));
+        var linePiece = [];
+        for (var j = 0; j < lineData.length - 1; j++) {
+          console.log('LinePiece ' + (j + 1) + '/' + (lineData.length - 1));
+          var point1 = pointsData[lineData[j]];
+          var point2 = pointsData[lineData[j + 1]];
+          var x1 = point1.x;
+          var y1 = point1.y;
+          var x2 = point2.x;
+          var y2 = point2.y;
+          var x = x2 - x1;
+          var y = y2 - y1;
+          var dist = Math.sqrt(x * x + y * y);
+          console.log('Distance = ' + dist);
+          var nrExtraPoints = Math.floor(dist / 10);
+          console.log('Extra points: ' + nrExtraPoints);
+          linePiece.push(lineData[j]);
+          if (nrExtraPoints > 0) {
+            //var extraLine = [extraPoints.length];
+            for (var k = 0; k < nrExtraPoints; k++) {
+              var extraPoint = {
+                x: point1.x + (k + 1) * x / (nrExtraPoints + 1),
+                y: point1.y + (k + 1) * y / (nrExtraPoints + 1)
+              };
+              linePiece.push(pointsData.length);
+              pointsData.push(extraPoint);
+              //extraLine.push(linesData.length + extraPoints.length);
+              //extraPoints.push(extraPoint);
+              /*if (j != 0) {
+                var lineData = [pointsData.length - 1, pointsData.length];
+              } else {
+                lineData[1] = pointsData.length;
+              }*/
+              //pointsData.push(pointData);
+              //linesData.push(lineData);
+              //console.log(pointData);
+            }
+            //extraLines.push(extraLine);
+          }
+        }
+        linePiece.push(lineData[lineData.length - 1]);
+        linesData[i] = linePiece;
+        console.log('LinePiece = ' + JSON.stringify(linePiece));
+        //extraLines.push(lineData);
+        //console.log(JSON.stringify(extraLines));
+        //console.log(JSON.stringify(extraPoints));
+        //totalDist += dist;
+      }
+      pointsData.forEach(function(point) {
+        console.log(JSON.stringify(point));
+      });
+      /*var totalPoints = [];
+      var totalLines = [];
+      for (var i = 0; i < pointsData.length; i++) {
+        totalPoints.push(pointsData[i]);
+      }
+      for (var i = 0; i < extraPoints.length; i++) {
+        totalPoints.push(extraPoints[i]); 
+      }
+      for (var i = 0; i < linesData.length; i++) {
+        totalLines.push(linesData[i]);
+      }
+      for (var i = 0; i < extraLines.length; i++) {
+        totalLines.push(extraLines[i]); 
+      }*/
+      //console.log(totalDist);
+      //console.log('LINES: ' + JSON.stringify(linesData));
+      chrome.runtime.sendMessage(Racing.APP_ID, {
+        url: Racing.gemeenteNaam + ':' + Racing.straatNaam + ':points.json',
+        json: pointsData
+      }, function(response) { 
+        //console.log('response: ' + response);
+      });
+      chrome.runtime.sendMessage(Racing.APP_ID, {
+        url: Racing.gemeenteNaam + ':' + Racing.straatNaam + ':lines.json',
+        json: linesData
+      }, function(response) { 
+        //console.log('response: ' + response);
+      });
+      //console.log(totalLines);
+      //console.log(totalPoints);
       Racing.log('Straat: ' + features.length + ' Lines (' + linesLog.join(', ') + ' Points)');
       Racing.points = points;
+      Racing.pointsData = pointsData;
       Racing.straat = fc;
       Racing.straatPunt = 0;
+      console.log('===========================================================================');
       showCapabilitiesGrid();
     }
   },
@@ -247,6 +346,9 @@ window.Racing = {
     Racing.activeLayer = Racing.layerByName(Racing.layerToActivate);
     Racing.log('Start Copy Layer ' + Racing.layerToActivateName);
     Racing.timer();
+    Racing.uniqueCols = {};
+    Racing.uniqueRows = {};
+    Racing.tiles = [];
     setTimeout(Racing.copyLayer, 0);
   },
   findKnownColors: function(canvas) {
@@ -553,37 +655,64 @@ window.Racing = {
         }
       }
       Racing.timer();
+      var tiles = [];
       for (var x = 0; x < gridColumns; x++) {
         var gridColumn = grid[x];
         var gridRows = gridColumn.length;
         for (var y = 0; y < gridRows; y++) {
           var tile = gridColumn[y];
-          if (Racing.layerToActivate != Racing.layersToActivate[0]) {
+          //if (Racing.layerToActivate != Racing.layersToActivate[0]) {
             Racing.context.clearRect(0, 0, 512, 512);
-          }
+          //}
           Racing.context.drawImage(tile.imgDiv, 0/*tile.position.x + position.left*/,0 /*tile.position.y + position.top*/, tile.size.w, tile.size.h);
-          chrome.runtime.sendMessage('anoednchafajddgcjghfampiefekeoca', {
+          if (tile.url.indexOf('ortho') == -1) {
+            var name = tile.url.split('LAYERS=')[1].split(/\&EXCEPTIONS|BBOX=/g);
+          } else {
+            var name = tile.url.split('LAYERS=')[1].split(/\&TRANSPARENT|BBOX=/g);
+          }
+          tiles.push(tile.url);
+          var layer = name[0];
+          var fileName = name[0] + ':' + name[2];
+          var points = name[2].split('&')[0].split(',');
+          //console.log(fileName);
+          Racing.tiles.push({
+            fileName: fileName,
+            points: points
+          });
+          //console.log(points);
+          for (var i = 0; i < Racing.pointsData.length / 2; i++) {
+            Racing.uniqueCols[Racing.pointsData[i * 2]] = true;
+            Racing.uniqueRows[Racing.pointsData[i * 2 + 1]] = true;
+          }
+          chrome.runtime.sendMessage(Racing.APP_ID, {
             base64: Racing.canvas.toDataURL('image/png'),
-            url: tile.url.split('BBOX=')[1]
+            url: Racing.gemeenteNaam + ':' + Racing.straatNaam + ':' + fileName
           }, function(response) { 
-            //console.log('response: ' + JSON.stringify(response));
+            //console.log('response: ' + response);
           });
         }
       }
+      chrome.runtime.sendMessage(Racing.APP_ID, {
+        tiles: tiles,
+        layer: Racing.layerToActivate,
+        url: Racing.gemeenteNaam + ':' + Racing.straatNaam + ':' + Racing.layerToActivate + '#' + Racing.straatPunt + '#' + Racing.pointsData.length + '.point'
+      }, function(response) { 
+        //console.log('response: ' + response);
+      });
       Racing.log('Loaded ' + grid.length * grid[0].length + ' Tiles');
       if (Racing.layersToActivate.length > 1 && Racing.layerToActivate != Racing.layersToActivate[1]) {
         Racing.layerToActivate = Racing.layersToActivate[1];
         Racing.layerToActivateName = Racing.layersToActivateName[1];
         setTimeout(Racing.copyLayer, 0);
-        return;
+        //return;
       }
-      if (Racing.straatPunt < Racing.points.length - 1) {
+      if (Racing.straatPunt < Racing.pointsData.length - 1) {
         Racing.straatPunt++;
         Racing.layerToActivate = Racing.layersToActivate[0];
         Racing.layerToActivateName = Racing.layersToActivateName[0];
         Racing.activeLayer = Racing.layerByName(Racing.layerToActivate);
         var bounds = new OpenLayers.Bounds();
-        var straatLinePoint = Racing.points[Racing.straatPunt];
+        var straatLinePoint = Racing.pointsData[Racing.straatPunt];
         bounds.extend(new OpenLayers.LonLat(straatLinePoint.x, straatLinePoint.y));
         bounds.extend(new OpenLayers.LonLat(straatLinePoint.x, straatLinePoint.y));
         map.zoomToExtent(bounds, true);
@@ -591,7 +720,45 @@ window.Racing = {
         Racing.timer();
         setTimeout(Racing.copyLayer, 0);
       } else {
-
+        var cols = [];
+        var rows = [];
+        var sortFloat = function(a, b) {
+          return a < b ? -1 : 1
+        };
+        for (var i in Racing.uniqueCols) {
+          cols.push(i);
+        }
+        for (var i in Racing.uniqueRows) {
+          rows.push(i);
+        }
+        cols.sort(sortFloat);
+        rows.sort(sortFloat);
+        //console.log(cols);
+        //console.log(rows);
+        for (var i = 0; i < Racing.tiles.length; i++) {
+          for (var j = 0; j < Racing.tiles[i].points.length / 2; j++) {
+            for (var k = 0; k < cols.length; k++) {
+              if (cols[k] == Racing.tiles[i].points[j * 2]) {
+                Racing.tiles[i].points[j * 2] = k;
+              }
+            }
+            for (var k = 0; k < rows.length; k++) {
+              if (rows[k] == Racing.tiles[i].points[j * 2 + 1]) {
+                Racing.tiles[i].points[j * 2 + 1] = k;
+              }
+            }
+          }
+        }
+        //console.log(JSON.stringify(Racing.tiles));
+        chrome.runtime.sendMessage(Racing.APP_ID, {
+          cols: Racing.cols,
+          rows: Racing.rows,
+          tiles: Racing.tiles,
+          layers: Racing.layersToActivate
+        }, function(response) {
+          alert('done');
+          //console.log('response: ' + response);
+        });
       }
       /*Racing.log('Searching Known Colors');
       Racing.timer();
@@ -604,10 +771,11 @@ window.Racing = {
     });
   },
   log: function(message) {
-    Racing.port.postMessage({
+    /*Racing.port.postMessage({
       action: 'log',
       message: message + (Racing.timestamp != null ? ' <b>[' + (new Date().getTime() - Racing.timestamp) + ' ms]</b>' : '')
-    });
+    });*/
+    console.log(message);
     Racing.timestamp = null;
   },
   timer: function() {

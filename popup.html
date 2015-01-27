@@ -13,9 +13,10 @@
       <td>City :</td>
       <td>
         <select id="gemeente">
-          <option value="Stabroek" selected="">Stabroek</option>
+          <option value="Stabroek">Stabroek</option>
           <option value="Kapellen">Kapellen</option>
           <option value="Antwerpen">Antwerpen</option>
+          <option value="Scherpenheuvel-Zichem">Scherpenheuvel-Zichem</option>
         </select>
       </td>
     </tr>
@@ -23,7 +24,7 @@
       <td>Street :</td>
       <td>
         <select id="straat">
-          <option value="Markt" selected="">Markt</option>
+          <option value="Markt">Markt</option>
           <option value="Frans Oomsplein">Frans Oomsplein</option>
           <option value="Witvenstraat">Witvenstraat</option>
           <option value="Hoge Weg">Hoge Weg</option>
@@ -32,14 +33,20 @@
           <option value="Kerkplein">Kerkplein</option>
           <option value="Molenweg">Molenweg</option>
           <option value="Molenstraat">Molenstraat</option>
-          <option value="Antwerpsesteenweg">Antwerpsesteenweg</option>
+          <option value="Antwerpse steenweg">Antwerpse steenweg</option>
           <option value="Lombaardstraat">Lombaardstraat</option>
+          <option value="Cederlaan">Cederlaan</option>
+          <option value="Essenlaan">Essenlaan</option>
           <option value="Berkenlaan">Berkenlaan</option>
           <option value="Wilgenlaan">Wilgenlaan</option>
           <option value="Dennenlaan">Dennenlaan</option>
           <option value="Platanenlaan">Platanenlaan</option>
+          <option value="Parijse weg">Parijse weg</option>
+          <option value="Olmenlaan">Olmenlaan</option>
+          <option value="Antwerpsesteenweg">Antwerpsesteenweg</option>
           <option value="Engelselei">Engelselei</option>
           <option value="Dorpsstraat">Dorpsstraat</option>
+          <option value="Pastorijveld">Pastorijveld</option>
           <option value="Hoevensebaan">Hoevensebaan</option>
           <option value="Streepstraat">Streepstraat</option>
           <option value="Essenhoutstraat">Essenhoutstraat</option>
@@ -47,12 +54,17 @@
           <option value="Gasstraat">Gasstraat</option>
           <option value="Oblatenlaan">Oblatenlaan</option>
           <option value="Zandstraat">Zandstraat</option>
+          <option value="Vredestraat">Vredestraat</option>
+          <option value="Guyotlei">Guyotlei</option>
           <option value="Grote Markt">Grote Markt</option>
           <option value="Glasgowstraat">Glasgowstraat</option>
           <option value="Philadelphiastraat">Philadelphiastraat</option>
           <option value="Gildekamersstraat">Gildekamersstraat</option>
           <option value="Suikerrui">Suikerrui</option>
           <option value="Meirbrug">Meirbrug</option>
+          <option value="Meir">Meir</option>
+          <option value="Noorderlaan">Noorderlaan</option>
+          <option value="Rozenstraat">Rozenstraat</option>
         </select>
       </td>
     </tr>
@@ -60,10 +72,19 @@
       <td>Layer :</td>
       <td>
         <select id="layer" multiple="multiple">
-          <option value="GRB_WBN" selected="">GRB - WBN - wegbaan</option>
-          <option value="GRB_WGO" selected="">GRB - WGO - wegopdeling</option>
-          <option value="GRB_GBG">GRB - GBG - gebouw aan de grond</option>
+          <option value="ortho">Luchtfoto</option>
+          <option value="GRB_WBN">GRB - WBN - wegbaan</option>
+          <option value="GRB_WGO">GRB - WGO - wegopdeling</option>
           <option value="GRB_WVB">GRB - WVB - wegverbinding</option>
+          <option value="GRB_WKN">GRB - WKN - wegknoop</option>
+          <option value="GRB_WRI">GRB - WRI - putdeksel</option>
+          <option value="GRB_WPI">GRB - WPI - puntvormige inrichting</option>
+          <option value="GRB_WTI">GRB - WTI - transversale weginrichting</option>
+          <option value="GRB_WLI">GRB - WLI - longitudinale weginrichting</option>
+          <option value="GRB_TRN">GRB - TRN - terrein</option>
+          <option value="GRB_ADP">GRB - ADP - administratief perceel</option>
+          <option value="GRB_ADP_Grens">GRB - ADP - administratief perceel grens</option>
+          <option value="GRB_GBG">GRB - GBG - gebouw aan de grond</option>
         </select>
       </td>
     </tr>
@@ -72,7 +93,7 @@
       <td>
         <select id="k">
           <option value="0.01">0.01</option>
-          <option value="0.02" selected="">0.02</option>
+          <option value="0.02">0.02</option>
           <option value="0.04">0.04</option>
           <option value="0.06">0.06</option>
           <option value="0.08">0.08</option>
@@ -92,7 +113,7 @@
           <option value="1">1</option>
           <option value="2">2</option>
           <option value="3">3</option>
-          <option value="4" selected="">4</option>
+          <option value="4">4</option>
           <option value="5">5</option>
           <option value="6">6</option>
         </select>
@@ -108,7 +129,7 @@
           <option value="3">3</option>
           <option value="4">4</option>
           <option value="5">5</option>
-          <option value="6" selected="">6</option>
+          <option value="6">6</option>
           <option value="7">7</option>
           <option value="8">8</option>
           <option value="9">9</option>
@@ -126,7 +147,7 @@
       <td>Straat Line Point:</td>
       <td>
         <select id="straatLinePoint">
-          <option value="0" selected="">0</option>
+          <option value="0">0</option>
           <option value="0-1">0-1</option>
           <option value="1">1</option>
           <option value="1-2">1-2</option>

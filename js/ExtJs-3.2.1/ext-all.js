@@ -5237,7 +5237,7 @@ Ext.select = Ext.Element.select;
     Ext.data.Connection.superclass.constructor.call(this)
   };
   Ext.extend(Ext.data.Connection, Ext.util.Observable, {
-    timeout: 30000,
+    timeout: 60000,
     autoAbort: false,
     disableCaching: true,
     disableCachingParam: "_dc",
@@ -17318,7 +17318,7 @@ Ext.data.ScriptTagProxy = function(a) {
 };
 Ext.data.ScriptTagProxy.TRANS_ID = 1000;
 Ext.extend(Ext.data.ScriptTagProxy, Ext.data.DataProxy, {
-  timeout: 30000,
+  timeout: 60000,
   callbackParam: "callback",
   nocache: true,
   doRequest: function(e, g, d, h, j, k, l) {
