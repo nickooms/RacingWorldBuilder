@@ -1,4 +1,5 @@
 var baseURL = 'http://geo-vlaanderen.agiv.be/gdiviewer/';
+var baseURL2 = 'http://crab.agiv.be/examples/Home/WsCrab2Test';
 var proxyURL = 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms??LAYERS=GRB_WBN&EXCEPTIONS=XML&FORMAT=image%2Fpng&TRANSPARENT=TRUE&VERSION=1.3.0&SERVICE=WMS&REQUEST=GetMap&STYLES=&ISBASELAYER=false&REALMINSCALE=75000&REALMAXSCALE=250&CRS=EPSG%3A31370&BBOX=';
 var proxyURL2 = 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms??LAYERS=GRB_WGO&EXCEPTIONS=XML&FORMAT=image%2Fpng&TRANSPARENT=TRUE&VERSION=1.3.0&SERVICE=WMS&REQUEST=GetMap&STYLES=&ISBASELAYER=false&REALMINSCALE=1500&REALMAXSCALE=250&CRS=EPSG%3A31370&BBOX=';
 var proxyURL3 = 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms??LAYERS=GRB_GBG&EXCEPTIONS=XML&FORMAT=image%2Fpng&TRANSPARENT=TRUE&VERSION=1.3.0&SERVICE=WMS&REQUEST=GetMap&STYLES=&ISBASELAYER=false&REALMINSCALE=75000&REALMAXSCALE=250&CRS=EPSG%3A31370&BBOX=';
@@ -20,6 +21,9 @@ chrome.management.getAll(function(exts) {
 });
 function checkForValidUrl(tabId, changeInfo, tab) {
   if (tab.url.indexOf(baseURL) == 0) {
+    chrome.pageAction.show(tabId);
+  }
+  if (tab.url.indexOf(baseURL2) == 0) {
     chrome.pageAction.show(tabId);
   }
 };
@@ -51,7 +55,7 @@ chrome.webRequest.onBeforeRequest.addListener(function(details) {
       switch (url) {
         case 'js/ExtJs-3.2.1/adapter/ext/ext-base.js':
         case 'js/Config/Config_Configureer.js':
-        case 'js/Config/Config_constants.js':
+        //case 'js/Config/Config_constants.js':
         case 'js/Config/Config_viewport.js':
         case 'js/Config/Map_events.js':
         case 'js/Config/Map_functions.js':

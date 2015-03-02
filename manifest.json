@@ -42,6 +42,13 @@
       "ext.js",
       "racing.js"
     ]
+  }, {
+    "matches": ["http://crab.agiv.be/examples/Home/WsCrab2Test"],
+    "run_at": "document_start",
+    "js": [
+      "racing2.js",
+      "jquery-1.5.1.js"
+    ]
   }],
   "permissions": [
     "webRequest",
@@ -52,7 +59,8 @@
     "unlimitedStorage",
     //"fileSystem",
     "http://geo-vlaanderen.agiv.be/gdiviewer/*",
-    "http://grb.agiv.be/*"
+    "http://grb.agiv.be/*",
+    "http://crab.agiv.be/*"
   ],
   "web_accessible_resources": [
     "favicon.ico",

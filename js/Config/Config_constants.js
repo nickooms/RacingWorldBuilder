@@ -51,7 +51,7 @@ if (appChoice == "develop") {
     var urlGem = 'http://nlbtest.agiv.be/ogc/wms/vrbg?'
     var urlGemWFS = 'http://ogc.beta.agiv.be/ogc/wfs/vrbg?'
 } else if (appChoice == "production") {
-    var proxyUrl = '/proxy88/Proxy/RegularProxy.ashx';
+    /*var proxyUrl = '/proxy88/Proxy/RegularProxy.ashx';
     var proxyUrlMM = '/proxy88/Proxy/RegularProxyMM.ashx';
     OpenLayers.ProxyHost = '/proxy88/Proxy/RegularProxy.ashx?url=';
     // URL to Crab Service
@@ -64,7 +64,24 @@ if (appChoice == "develop") {
     var urlGRB = 'http://grb.agiv.be/geodiensten/raadpleegdiensten/GRB-basiskaart/wms?';
     var urlGRBgr = 'http://grb.agiv.be/geodiensten/raadpleegdiensten/GRB-basiskaart/wmsgr?';
     var urlGem = 'http://geo.agiv.be/ogc/wms/vrbg?'
-    var urlGemWFS = 'http://wms.agiv.be/ogc/wfs/vrbg?'
+    var urlGemWFS = 'http://wms.agiv.be/ogc/wfs/vrbg?'*/
+
+    var proxyUrl = 'proxy/RegularProxy.ashx';
+    var proxyUrlMM = 'proxy/RegularProxyMM.ashx';
+    OpenLayers.ProxyHost = 'proxy/RegularProxy.ashx?url=';
+    // URL to Crab Service
+    //var CrabUrl2 = 'proxy/regularproxycrab.ashx?url=http://aocsrv88/CRABREST/crab.svc';
+    //var CapakeyUrl = 'proxy/regularproxycrab.ashx?url=http://aocsrv88/CAPAKEYREST/capakey.svc';
+    var CrabUrl2 = "http://" + window.location.host + '/CRABREST/crab.svc';
+    var CapakeyUrl = "http://" + window.location.host + '/CAPAKEYREST/capakey.svc';
+    // base layer urls
+    var urlStreets = 'http://geo.agiv.be/ogc/wms/navstreets?';
+    var urlOrtho = 'http://geo.agiv.be/ogc/wms/omkl?';
+    //var urlGRB = 'http://wms.agiv.be/ogc/wms/grb?';
+    var urlGRB = 'http://grb.agiv.be/geodiensten/raadpleegdiensten/GRB-basiskaart/wms?';
+    var urlGRBgr = 'http://grb.agiv.be/geodiensten/raadpleegdiensten/GRB-basiskaart/wmsgr?';
+    var urlGem = 'http://geo.agiv.be/ogc/wms/vrbg?'
+    var urlGemWFS = 'http://geo.agiv.be/ogc/wfs/vrbg?'
 }
 
 // wms sources
