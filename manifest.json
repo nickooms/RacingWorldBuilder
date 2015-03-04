@@ -47,7 +47,9 @@
     "run_at": "document_start",
     "js": [
       "racing2.js",
-      "jquery-1.5.1.js"
+      "jquery-1.5.1.js",
+      "Wegobject.js",
+      "Wegsegment.js"
     ]
   }],
   "permissions": [
