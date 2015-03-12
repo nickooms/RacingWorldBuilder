@@ -22,7 +22,6 @@ Wegsegment.prototype.load = function(callback) {
   	}
   	this.geometrieMethode = parseInt(row[2]);
   	this.line = line;
-    console.log(this);
     callback.bind(this)();
   }).bind(this), 'html');
   return this;

@@ -49,7 +49,9 @@
       "racing2.js",
       "jquery-1.5.1.js",
       "Wegobject.js",
-      "Wegsegment.js"
+      "Wegsegment.js",
+      "Straat.js",
+      "GML.js"
     ]
   }],
   "permissions": [

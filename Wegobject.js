@@ -23,7 +23,6 @@ Wegobject.prototype.load = function(callback) {
   		x: parseFloat(row[6].replace(',', '.')),
   		y: parseFloat(row[7].replace(',', '.'))
   	};
-    console.log(this);
     callback.bind(this)();
   }).bind(this), 'html');
   return this;
