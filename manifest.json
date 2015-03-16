@@ -48,6 +48,9 @@
     "js": [
       "racing2.js",
       "jquery-1.5.1.js",
+      "Wegbaan.js",
+      "Wegknoop.js",
+      "Wegverbindingen.js",
       "Wegobject.js",
       "Wegsegment.js",
       "Straat.js",
@@ -64,7 +67,8 @@
     //"fileSystem",
     "http://geo-vlaanderen.agiv.be/gdiviewer/*",
     "http://grb.agiv.be/*",
-    "http://crab.agiv.be/*"
+    "http://crab.agiv.be/*",
+    "http://geo.api.agiv.be/*"
   ],
   "web_accessible_resources": [
     "favicon.ico",

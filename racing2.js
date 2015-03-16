@@ -1,8 +1,9 @@
 $R = window.Racing = {
-	MARGIN: 50,
+	MARGIN: 100,
   APP_ID: 'anoednchafajddgcjghfampiefekeoca',
   GET: 'http://geo-vlaanderen.agiv.be/CRABREST/crab.svc/',//GetLocation/?GemeenteId=23&StraatId=7338 || TestPostkanton
   POST: '/Examples/Home/ExecOperation',
+  WMS_GRB: 'http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms?',
   ready: false,
   onMessage: function(msg) {
     if (!$R.ready) {
@@ -13,6 +14,247 @@ $R = window.Racing = {
         $R.showGemeente(msg.gemeenteNaam, msg.straatNaam);
         break;
     }
+  },
+  wmsGetMap: function(layers, width, height, minX, minY, maxX, maxY) {
+  	var parameters = {
+  		LAYERS: layers || 'GRB_basiskaart',
+  		EXCEPTIONS: 'XML',
+  		FORMAT: 'image/png',
+  		TRANSPARENT: 'TRUE',
+  		VERSION: '1.3.0',
+  		SERVICE: 'WMS',
+  		REQUEST: 'GetMap',
+  		STYLES: '',
+  		ISBASELAYER: 'false',
+  		REALMINSCALE: '15000',
+  		REALMAXSCALE: '250',
+  		CRS: 'EPSG:31370',
+  		BBOX: [minX, minY, maxX, maxY].join(','),
+  		WIDTH: width || 1000,
+  		HEIGHT: height || 1000
+  	};
+  	var params = [];
+  	for (var paramName in parameters) {
+  		params.push(paramName + '=' + parameters[paramName]);
+  	}
+  	var url = $R.WMS_GRB + params.join('&');
+  	return new Promise(function(resolve, reject) {
+  		var processImageData = function(imageData) {
+  			//console.log(url);
+  			//console.log(imageData);
+  			var parameters = {};
+  			for (var param of url.replace($R.WMS_GRB, '').split('&')) {
+  				param = param.split('=');
+  				parameters[param[0]] = param[1];
+  			}
+  			resolve({
+  				parameters: parameters,
+  				imageData: imageData
+  			});
+  		};
+  		var cache = localStorage[url];
+  		if (cache === undefined) {
+	  		var xhr = new XMLHttpRequest();
+				xhr.open('GET', url, true);
+				xhr.responseType = 'blob';
+				xhr.onreadystatechange = function() {
+				  if (xhr.readyState == 4) {
+				    var img = new Image();
+			  		img.onload = function(evt) {
+			  			var image = evt.target;
+			  			var width = image.width;
+			  			var height = image.height;
+			  			window.URL.revokeObjectURL(image.src);
+			  			var canvas = document.createElement('canvas');
+			  			canvas.width = width;
+			  			canvas.height = height;
+			  			var context = canvas.getContext('2d');
+			  			context.drawImage(image, 0, 0);
+			  			localStorage[xhr.responseURL] = canvas.toDataURL('image/png');
+			  			var imageData = context.getImageData(0, 0, width, height);
+			  			processImageData(imageData, xhr.responseURL);
+			  		};
+			  		var objectUrl = window.URL.createObjectURL(xhr.response);
+				    img.src = objectUrl;
+				  }
+				};
+				xhr.send();
+			} else {
+				var img = new Image();
+	  		img.onload = function(evt) {
+	  			var image = evt.target;
+			  	var width = image.width;
+			  	var height = image.height;
+	  			var canvas = document.createElement('canvas');
+	  			canvas.width = width;
+			  	canvas.height = height;
+	  			var context = canvas.getContext('2d');
+	  			context.drawImage(image, 0, 0);
+	  			var imageData = context.getImageData(0, 0, width, height);
+	  			processImageData(imageData, url);
+	  		};
+		    img.src = cache;
+			}
+  	});
+  },
+  wmsGetFeatureInfo: function(layers, width, height, bbox, x, y) {
+  	return new Promise(function(resolve, reject) {
+  		var parameters = {
+	  		LAYERS: layers || 'GRB_WKN',
+	  		QUERY_LAYERS: layers || 'GRB_WKN',
+	  		STYLES: '',
+	  		SERVICE: 'WMS',
+	  		VERSION: '1.3.0',
+	  		REQUEST: 'GetFeatureInfo',
+	  		EXCEPTIONS: 'XML',
+	  		BBOX: bbox,
+	  		FEATURE_COUNT: 10,
+	  		WIDTH: width,
+	  		HEIGHT: height,
+	  		FORMAT: 'image/png',
+	  		INFO_FORMAT: 'text/plain',
+	  		CRS: 'EPSG:31370',
+	  		I: x,
+	  		J: y
+	  	};
+	  	var params = [];
+	  	for (var paramName in parameters) {
+	  		params.push(paramName + '=' + parameters[paramName]);
+	  	}
+	  	var url = $R.WMS_GRB + params.join('&');
+	  	var parseResults = function(results) {
+	  		switch (parameters.LAYERS) {
+	  			case 'GRB_WKN':
+	  				//resolve(parseWegknoop(results));
+	  				resolve(Wegknoop.parse(results, parameters));
+	  				break;
+	  			case 'GRB_WVB':
+	  				//resolve(parseWegverbindingen(results));
+	  				resolve(Wegverbindingen.parse(results, parameters));
+	  				break;
+	  			case 'GRB_WBN':
+	  				//resolve(parseWegbaan(results));
+	  				resolve(Wegbaan.parse(results, parameters));
+	  				break;
+	  		}
+	  	};
+  		/*var parseWegknoop = function(knoop) {
+  			knoop = knoop.replace("GetFeatureInfo results:\n\nLayer 'GRB_WKN'\n  Feature", '');
+  			return {
+  				objectType: 'Wegknoop',
+  				id: parseInt(knoop.split(':')[0]),
+  				width: parameters.WIDTH,
+  				height: parameters.HEIGHT,
+  				bbox: parameters.BBOX,
+  				x: parameters.I,
+  				y: parameters.J
+  			};
+  		};*/
+  		/*var parseWegverbindingen = function(wegverbindingen) {
+  			wegverbindingen = wegverbindingen.replace("GetFeatureInfo results:\n\nLayer 'GRB_WVB'\n  Feature", '').split('  Feature');
+  			for (var i = 0; i < wegverbindingen.length; i++) {
+  				var wegverbinding = wegverbindingen[i].split('\n');
+  				wegverbindingen[i] = {
+  					objectType: 'Wegverbinding',
+  					id: parseInt(wegverbinding[0].split(':')[0]),
+  					width: parameters.WIDTH,
+	  				height: parameters.HEIGHT,
+	  				bbox: parameters.BBOX,
+	  				x: parameters.I,
+	  				y: parameters.J
+  				};
+  				for (var j = 1; j < wegverbinding.length; j++) {
+  					var property = wegverbinding[j].split(' = ');
+  					if (property.length === 2) {
+	  					var propertyName = property[0].replace('    ', '');
+	  					var propertyValue = property[1].split("'").join('');
+	  					switch (propertyName) {
+	  						case 'uidn':
+	  						case 'oidn':
+	  						case 'lniscode':
+	  						case 'lstrnmid':
+	  						case 'rniscode':
+	  						case 'rstrnmid':
+	  						case 'verh':
+	  						case 'wegnummer':
+	  						case 'morf':
+	  						case 'opndatum':
+	  						case 'lgemeente':
+	  						case 'rgemeente':
+	  						case 'rstrnm':
+	  							break;
+	  						case 'gid':
+	  							wegverbindingen[i].id = parseInt(propertyValue);
+	  							break;
+	  						case 'lstrnm':
+	  							wegverbindingen[i].straatnaam = propertyValue;
+	  							break;
+	  						case 'lengte':
+	  							wegverbindingen[i].lengte = parseFloat(propertyValue);
+	  							break;
+	  						default:
+	  							wegverbindingen[i][propertyName] = propertyValue;
+	  					}
+	  				}
+  				}
+  			}
+  			return wegverbindingen;
+  		};*/
+  		/*var parseWegbaan = function(wegbaan) {
+  			wegbaan = wegbaan.replace("GetFeatureInfo results:\n\nLayer 'GRB_WBN'\n  Feature", '').split(':');
+  			var properties = wegbaan[1].split('\n');
+  			wegbaan = {
+  				objectType: 'Wegbaan',
+  				id: parseInt(wegbaan[0]),
+  				width: parameters.WIDTH,
+  				height: parameters.HEIGHT,
+  				bbox: parameters.BBOX,
+  				x: parameters.I,
+  				y: parameters.J
+  			};
+  			for (var i = 0; i < properties.length; i++) {
+  				var property = properties[i].split(' = ');
+  				if (property.length == 2) {
+  					var propertyName = property[0].replace('    ', '');
+	  				var propertyValue = property[1].split("'").join('');
+	  				switch (propertyName) {
+	  					case 'uidn':
+	  					case 'oidn':
+	  					case 'opndatum':
+	  					case 'type':
+	  						break;
+	  					case 'gid':
+	  						wegbaan.id = parseInt(propertyValue);
+	  						break;
+	  					case 'lengte':
+	  					case 'oppervl':
+	  						wegbaan[propertyName] = parseFloat(propertyValue);
+	  						break;
+	  					case 'lbltype':
+	  						wegbaan.type = propertyValue;
+	  						break;
+	  					default:
+	  						wegbaan[propertyName] = propertyValue;
+	  				}
+  				}
+  			}
+  			return wegbaan;
+  		};*/
+  		var cache = localStorage[url];
+  		if (cache === undefined) {
+	  		var xhr = new XMLHttpRequest();
+				xhr.open('GET', url, true);
+				xhr.onreadystatechange = function() {
+				  if (xhr.readyState == 4) {
+				  	localStorage[url] = xhr.responseText;
+				  	parseResults(xhr.responseText);
+				  }
+				};
+				xhr.send();
+			} else {
+				parseResults(cache);
+			}
+		});
   },
   post: function(name, parameters, singleObject) {
 		return new Promise(function(resolve, reject) {
@@ -52,54 +294,12 @@ $R = window.Racing = {
     $R.huisNummers = [];
     $R.wegobjecten = [];
     $R.wegsegmenten = [];
+    $R.wegknopen = {};
+    $R.wegverbindingen = {};
+    $R.wegbanen = {};
     $R.huizen = [];
     $R.gml = [];
     $R.ready = true;
-  },
-  changeOperation: function(operation, callback) {
-    $('#operationList').val(operation);
-    $R.nextAction = callback;
-    $('#paramsTable').find('tr:gt(0)').remove();
-    if ($R[operation].parameters != null) {
-    	$R.onParametersReceived($R[operation].parameters);
-    } else {
-	    $.post('/Examples/Home/Parameters', {
-	      operation: operation
-	    }, function (data) {
-	    	console.log(operation + '==' + data);
-	    	$R[operation].parameters = data;
-	      $R.onParametersReceived(data);
-	    }, 'json');
-	  }
-  },
-  onParametersReceived: function(parameterList) {
-    for (var i = 0; i < parameterList.length; i++) {
-    	var parameter = parameterList[i];
-      $('#paramsTable tr:last').after('<tr><td>' + parameter.Name + '</td><td><input type="text" id="' + parameter.Name + 'Txt" style="width:98%;"/></td><td>' + parameter.Type + '</td></tr>');
-    }
-    $R.nextAction();
-  },
-  execOperation: function(callback) {
-    $('#SorteerVeldTxt').val(0);
-    $R.nextAction = callback;
-    var params = new Array();
-    $('#paramsTable').find('tr:gt(0)').each(function (i) {
-      var param = new Object();
-      param.Name = $(this).find('td:first').html();
-      param.Value = $(this).find('td:nth-child(2)').find(':input').val();
-      params.push(param);
-    });
-    $('#results').html();
-    $.post($R.POST, {
-      operation: $("#operationList").val(),
-      parametersJson: JSON.stringify(params)
-    }, function (data) {
-      $R.onOperationExecuted(data);
-    }, 'html');
-  },
-  onOperationExecuted: function(result) {
-    $('#results').html(result);
-    $R.nextAction();
   },
   html: function(data) {
 		var rows = data.replace("<table border='1' cellspacing='0'><tr><td>", '').split('</td></tr></table>')[0].split('<i>').join('').split('</i>').join('').split('<b>').join('').split('</b>').join('').split('</td></tr><tr><td>');
@@ -112,6 +312,7 @@ $R = window.Racing = {
 				switch (colNames[j]) {
 					case 'GewestId':
 					case 'GemeenteId':
+					case 'StraatnaamId':
 					case 'BeginBewerking':
 					case 'BeginOrganisatie':
 					case 'HuisnummerId':
@@ -154,7 +355,7 @@ $R = window.Racing = {
 		  		}
 		  	});
 			} else {
- 				console.log($R.huizen.join('\n'));
+ 				//console.log($R.huizen.join('\n'));
 			}
 	  };
 		var getGebouw = function() {
@@ -173,6 +374,136 @@ $R = window.Racing = {
 			  }
 			});
 		};
+		var wegsegmentLoaded = function() {
+      $R.straat.wegsegmentenLoaded++;
+      for (var point of this.line) {
+        $R.gml.push(GML.point(point));
+        var max = {
+        	x: Math.ceil(point.x + 1),
+        	y: Math.ceil(point.y + 1)
+        };
+        var min = {
+        	x: Math.floor(point.x - 1),
+        	y: Math.floor(point.y - 1)
+        }
+        var width = max.x - min.x;
+	    	var height = max.y - min.y;
+	    	$R.wmsGetMap('GRB_WKN', width * 10, height * 10, min.x, min.y, max.x, max.y).then(function(wegknoop) {
+	    		var imageData = wegknoop.imageData;
+	    		var data = imageData.data;
+	    		var width = imageData.width;
+	    		var height = imageData.height;
+	    		var parameters = wegknoop.parameters;
+	    		for (var x = 0; x < width; x++) {
+	    			for (var y = 0; y < height; y++) {
+	    				var offset = (y * width + x) * 4;
+	    				var r = data[offset];
+	    				var g = data[offset + 1];
+	    				var b = data[offset + 2];
+	    				var a = data[offset + 3];
+	    				if (a === 0xff) {
+	    					$R.wmsGetFeatureInfo('GRB_WKN', width, height, parameters.BBOX, x, y).then(function(knoop) {
+	    						if ($R.wegknopen[knoop.id] === undefined) {
+	    							knoop.wegverbindingen = {};
+	    							$R.wegknopen[knoop.id] = knoop;
+	    							console.log(knoop);
+	    						}
+	    						$R.wmsGetFeatureInfo('GRB_WVB', width, height, parameters.BBOX, x, y).then(function(wegverbindingen) {
+	    							for (var wegverbinding of wegverbindingen) {
+	    								if ($R.wegverbindingen[wegverbinding.id] === undefined) {
+	    									wegverbinding.wegknopen = {};
+	    									$R.wegverbindingen[wegverbinding.id] = wegverbinding;
+	    									console.log(wegverbinding);
+	    								}
+	    								$R.wegverbindingen[wegverbinding.id].wegknopen[knoop.id] = knoop.id;
+	    								$R.wegknopen[knoop.id].wegverbindingen[wegverbinding.id] = wegverbinding.straatnaam;
+	    							}
+	    						});
+	    						$R.wmsGetFeatureInfo('GRB_WBN', width, height, parameters.BBOX, x, y).then(function(wegbaan) {
+	    							if ($R.wegbanen[wegbaan.id] === undefined) {
+	    								wegbaan.wegknopen = {};
+	    								wegbaan.wegverbindingen = {};
+	    								$R.wegbanen[wegbaan.id] = wegbaan;
+	    								console.log(wegbaan);
+	    							}
+	    							$R.wegbanen[wegbaan.id].wegknopen[knoop.id] = knoop.id;
+	    						});
+	    					});
+	    					return;
+	    				}
+	    			}
+	    		}
+	    		$R.wmsGetFeatureInfo('GRB_WBN', width, height, parameters.BBOX, x, y).then(function(wegbaan) {
+	    			if ($R.wegbanen[wegbaan.id] === undefined) {
+	    				wegbaan.wegknopen = {};
+	    				wegbaan.wegverbindingen = {};
+							$R.wegbanen[wegbaan.id] = wegbaan;
+							console.log(wegbaan);
+						}
+	    		});
+	    	});
+      }
+      $R.gml.push(GML.line(this.line));
+      if ($R.straat.wegsegmentenCount == $R.straat.wegsegmentenLoaded) {
+        $R.gml.push(GML.END);
+        //console.log($R.gml.join('\n'));
+        $R.ListHuisnummersWithStatusByStraatnaamId($R.straat.id).then(function(huisNummers) {
+		    	$R.huisNummers = huisNummers.filter(function(huisNummer) {
+		    		if (huisNummer.StatusHuisnummer == 3) {
+    					return {
+				        huisnummerId: huisNummer.HuisnummerId,
+				        huisnummer: huisNummer.Huisnummer
+				      };
+				    } else {
+				    	return null;
+				    }
+				  });
+				  listGebouwen();
+		    });
+      }
+    };
+		var wegobjectLoaded = function() {
+			$R.straat.wegobjectenLoaded++;
+      $R.gml.push(GML.point(this.center));
+      $R.gml.push(GML.polygon([this.min, { x: this.max.x, y: this.min.y }, this.max, { x: this.min.x, y: this.max.y }, this.min]));
+      if ($R.straat.wegobjectenLoaded == $R.straat.wegobjectenCount) {
+        $R.ListWegsegmentenByStraatnaamId($R.straat.id).then(function(wegsegmenten) {
+        	$R.straat.wegsegmentenCount = wegsegmenten.length;
+				  $R.straat.wegsegmentenLoaded = 0;
+				  for (var wegsegment of wegsegmenten) {
+				    var wegsegment = new Wegsegment(wegsegment.IdentificatorWegsegment, wegsegment.StatusWegsegment);
+				    $R.wegsegmenten.push(wegsegment);
+				    wegsegment.load(wegsegmentLoaded);
+      		}
+        });
+      }
+		};
+		var straatLocationLoaded = function() {
+			$R.gml.push(GML.BEGIN);
+	    var margin = $R.MARGIN;
+	    var min = {
+	      x: this.min.x - margin,
+	      y: this.min.y - margin
+	    };
+	    var max = {
+	      x: this.max.x + margin,
+	      y: this.max.y + margin
+	    };
+	    $R.gml.push(GML.polygon([min, { x: max.x, y: min.y }, max, { x: min.x, y: max.y }, min]));
+	    var width = Math.ceil(max.x) - Math.floor(min.x);
+	    var height = Math.ceil(max.y) - Math.floor(min.y);
+	    //$R.wmsGetFeatureInfo('GRB_WKN');
+	    //$R.wmsGetMap('GRB_WKN', width * 10, height * 10, Math.floor(min.x), Math.floor(min.y), Math.ceil(max.x), Math.ceil(max.y));
+			$R.ListWegobjectenByStraatnaamId(this.id).then(function(wegobjecten) {
+				$R.straat.wegobjectenCount = wegobjecten.length;
+			  $R.straat.wegobjectenLoaded = 0;
+			  for (var wegobject of wegobjecten) {
+			    var wegobject = new Wegobject(wegobject.IdentificatorWegobject, wegobject.AardWegobject);
+			    $R.wegobjecten.push(wegobject);
+			    wegobject.load(wegobjectLoaded);
+				}
+			});
+	  };
     $R.gemeenteNaam = gemeenteNaam;
     $R.straatNaam = straatNaam;
     $R.GetGemeenteByGemeenteNaam(gemeenteNaam).then(function(gemeente) {
@@ -180,66 +511,8 @@ $R = window.Racing = {
     	$R.nisGemeenteCode = gemeente.NisGemeenteCode;
     	$R.FindStraatnamen(gemeente.GemeenteId, straatNaam).then(function(straatnamen) {
     		$R.straatNaamId = straatnamen[0].StraatnaamId;
-    		$R.straat = new Straat(parseInt($R.gemeenteId), parseInt($R.straatNaamId)).loadLocation(function() {
-    			$R.gml.push(GML.BEGIN);
-			    var margin = $R.MARGIN;
-			    var min = {
-			      x: this.min.x - margin,
-			      y: this.min.y - margin
-			    };
-			    var max = {
-			      x: this.max.x + margin,
-			      y: this.max.y + margin
-			    };
-			    $R.gml.push(GML.polygon([min, { x: max.x, y: min.y }, max, { x: min.x, y: max.y }, min]));
-    			$R.ListWegobjectenByStraatnaamId(this.id).then(function(wegobjecten) {
-    				$R.straat.wegobjectenCount = 0;
-					  $R.straat.wegobjectenLoaded = 0;
-					  for (var wegobject of wegobjecten) {
-					    $R.straat.wegobjectenCount++;
-					    var wegobject = new Wegobject(wegobject.IdentificatorWegobject, wegobject.AardWegobject).load(function() {
-					      $R.straat.wegobjectenLoaded++;
-					      $R.gml.push(GML.point(this.center));
-					      $R.gml.push(GML.polygon([this.min, { x: this.max.x, y: this.min.y }, this.max, { x: this.min.x, y: this.max.y }, this.min]));
-					      if ($R.straat.wegobjectenLoaded == $R.straat.wegobjectenCount) {
-					        $R.ListWegsegmentenByStraatnaamId($R.straat.id).then(function(wegsegmenten) {
-					        	$R.straat.wegsegmentenCount = 0;
-									  $R.straat.wegsegmentenLoaded = 0;
-									  for (var wegsegment of wegsegmenten) {
-									    $R.straat.wegsegmentenCount++;
-									    var wegsegment = new Wegsegment(wegsegment.IdentificatorWegsegment, wegsegment.StatusWegsegment).load(function() {
-									      $R.straat.wegsegmentenLoaded++;
-									      for (var point of this.line) {
-									        $R.gml.push(GML.point(point));
-									      }
-									      $R.gml.push(GML.line(this.line));
-									      if ($R.straat.wegsegmentenCount == $R.straat.wegsegmentenLoaded) {
-									        $R.gml.push(GML.END);
-									        console.log($R.gml.join('\n'));
-									        $R.ListHuisnummersWithStatusByStraatnaamId($R.straat.id).then(function(huisNummers) {
-											    	$R.huisNummers = huisNummers.filter(function(huisNummer) {
-											    		if (huisNummer.StatusHuisnummer == 3) {
-								      					return {
-													        huisnummerId: huisNummer.HuisnummerId,
-													        huisnummer: huisNummer.Huisnummer
-													      };
-													    } else {
-													    	return null;
-													    }
-													  });
-													  listGebouwen();
-											    });
-									      }
-									    });
-									    $R.wegsegmenten.push(wegsegment);
-					      		}
-					        });
-					      }
-					    });
-					    $R.wegobjecten.push(wegobject);
-    				}
-    			});
-			  });
+    		$R.straat = new Straat($R.gemeenteId, $R.straatNaamId);
+    		$R.straat.loadLocation(straatLocationLoaded);
     	});
     });
   }
@@ -249,9 +522,9 @@ $R.GetWegobjectByIdentificatorWegobject = function(identificatorWegobject) {
 		IdentificatorWegobject: identificatorWegobject
 	}, true);
 };
-$R.GetWegsegmentByIdentificatorWegsegment = function(identificatorWegsegment) {
+$R.GetWegsegmentByIdentificatorWegsegment = function(identificatorWegobject) {
 	return $R.post('GetWegsegmentByIdentificatorWegsegment', {
-		IdentificatorWegsegment: identificatorWegsegment
+		IdentificatorWegsegment: identificatorWegobject
 	}, true);
 };
 $R.GetGemeenteByGemeenteNaam = function(gemeenteNaam, gewestId) {
@@ -259,346 +532,43 @@ $R.GetGemeenteByGemeenteNaam = function(gemeenteNaam, gewestId) {
 		GemeenteNaam: gemeenteNaam,
 		GewestId: gewestId || 2
 	}, true);
-	/*return new Promise(function(resolve, reject) {
-		var post = $R.encodePost('GetGemeenteByGemeenteNaam', {
-			GemeenteNaam: gemeenteNaam,
-			GewestId: gewestId || 2
-		});
-		var cache = localStorage[JSON.stringify(post)];
-		if (cache === undefined) {
-			console.log(JSON.stringify(post));
-	    $.post($R.POST, post, function (data) {
-	    	var response = $R.html(data)[0];
-	    	localStorage[JSON.stringify(post)] = JSON.stringify(response);
-	    	resolve(response);
-	    }, 'html');
-	  } else {
-	  	resolve(JSON.parse(cache));
-	  }
-	});*/
 };
-/*$R.GetGemeenteByGemeenteNaam.parameters = [{
-	Name: "GemeenteNaam",
-	Value: null,
-	Type: "String"
-}, {
-	Name: "GewestId",
-	Value: null,
-	Type: "Int32"
-}];
-$R.GetGemeenteByGemeenteNaam.request = function() {
-	$('#GemeenteNaamTxt').val($R.gemeenteNaam);
-  $('#GewestIdTxt').val(2);
-  $R.execOperation($R.GetGemeenteByGemeenteNaam.response);
-};
-$R.GetGemeenteByGemeenteNaam.response = function() {
-	$R.gemeenteId = $('#results').find('tr:gt(0)').find('td:nth-child(2)').text();
-  $R.nisGemeenteCode = $('#results').find('tr:gt(0)').find('td:nth-child(7)').text();
-  $R.changeOperation('FindStraatnamen', $R.FindStraatnamen.request);
-};*/
 $R.FindStraatnamen = function(gemeenteId, straatNaam, sorteerVeld) {
 	return $R.post('FindStraatnamen', {
 		GemeenteId: gemeenteId,
 		Straatnaam: straatNaam,
 		SorteerVeld: sorteerVeld || 0
 	});
-	/*return new Promise(function(resolve, reject) {
-		var post = $R.encodePost('FindStraatnamen', {
-			GemeenteId: gemeenteId,
-			Straatnaam: straatNaam,
-			SorteerVeld: sorteerVeld || 0
-		});
-		var cache = localStorage[JSON.stringify(post)];
-		if (cache === undefined) {
-	    $.post($R.POST, post, function (data) {
-	    	var response = $R.html(data);
-	    	localStorage[JSON.stringify(post)] = JSON.stringify(response);
-	    	resolve(response);
-	    }, 'html');
-	  } else {
-	  	resolve(JSON.parse(cache));
-	  }
-	});*/
 };
-/*$R.FindStraatnamen.parameters = [{
-	Name: "Straatnaam",
-	Value: null,
-	Type: "String"
-}, {
-	Name: "GemeenteId",
-	Value: null,
-	Type: "Int32"
-}, {
-	Name: "SorteerVeld",
-	Value: null,
-	Type: "Int32"
-}];
-$R.FindStraatnamen.request = function() {
-	$('#StraatnaamTxt').val($R.straatNaam);
-  $('#GemeenteIdTxt').val($R.gemeenteId);
-  $R.execOperation($R.FindStraatnamen.response);
-};
-$R.FindStraatnamen.response = function() {
-	$R.straatNaamId = $('#results').find('tr:gt(0)').find('td:first').text();
-  $R.straat = new Straat(parseInt($R.gemeenteId), parseInt($R.straatNaamId)).getLocation(function() {
-    console.log(this);
-    $R.gml.push(GML.BEGIN);
-    var margin = $R.MARGIN;
-    var min = {
-      x: this.min.x - margin,
-      y: this.min.y - margin
-    };
-    var max = {
-      x: this.max.x + margin,
-      y: this.max.y + margin
-    };
-    $R.gml.push(GML.polygon([min, { x: max.x, y: min.y }, max, { x: min.x, y: max.y }, min]));
-    //$R.changeOperation('ListWegobjectenByStraatnaamId', $R.ListWegobjectenByStraatnaamId.request);
-    $R.changeOperation('ListHuisnummersWithStatusByStraatnaamId', $R.ListHuisnummersWithStatusByStraatnaamId.request);
-  });
-};*/
 $R.ListWegobjectenByStraatnaamId = function(straatNaamId, sorteerVeld) {
 	return $R.post('ListWegobjectenByStraatnaamId', {
 		StraatnaamId: straatNaamId,
 		SorteerVeld: sorteerVeld || 0
 	});
-	/*return new Promise(function(resolve, reject) {
-    $.post($R.POST, {
-      operation: 'ListWegobjectenByStraatnaamId',
-      parametersJson: JSON.stringify([
-      	{ Name: 'StraatnaamId', Value: straatNaamId },
-      	{ Name: 'SorteerVeld', Value: sorteerVeld || 0 }
-      ])
-    }, function (data) {
-    	resolve($R.html(data));
-    }, 'html');
-	});*/
 };
-/*$R.ListWegobjectenByStraatnaamId.parameters = [{
-	Name: "StraatnaamId",
-	Value: null,
-	Type: "Int32"
-}, {
-	Name: "SorteerVeld",
-	Value: null,
-	Type: "Int32"
-}];
-$R.ListWegobjectenByStraatnaamId.request = function() {
-	$('#StraatnaamIdTxt').val($R.straatNaamId);
-  $R.execOperation($R.ListWegobjectenByStraatnaamId.response);
-};
-$R.ListWegobjectenByStraatnaamId.response = function() {
-	$R.straat.wegobjectenCount = 0;
-  $R.straat.wegobjectenLoaded = 0;
-  $('#results').find('tr:gt(0)').each(function(i) {
-    $R.straat.wegobjectenCount++;
-    var id = parseInt($(this).find('td:first').text());
-    var aard = parseInt($(this).find('td:nth-child(2)').text());
-    var wegobject = new Wegobject(id, aard).load(function() {
-      $R.straat.wegobjectenLoaded++;
-      $R.gml.push(GML.point(this.center));
-      $R.gml.push(GML.polygon([this.min, { x: this.max.x, y: this.min.y }, this.max, { x: this.min.x, y: this.max.y }, this.min]));
-      if ($R.straat.wegobjectenLoaded == $R.straat.wegobjectenCount) {
-        $R.changeOperation('ListWegsegmentenByStraatnaamId', $R.ListWegsegmentenByStraatnaamId.request);
-      }
-    });
-    $R.wegobjecten.push(wegobject);
-  });
-};*/
 $R.ListWegsegmentenByStraatnaamId = function(straatNaamId, sorteerVeld) {
 	return $R.post('ListWegsegmentenByStraatnaamId', {
 		StraatnaamId: straatNaamId,
 		SorteerVeld: sorteerVeld || 0
 	});
-	/*return new Promise(function(resolve, reject) {
-    $.post($R.POST, {
-      operation: 'ListWegsegmentenByStraatnaamId',
-      parametersJson: JSON.stringify([
-      	{ Name: 'StraatnaamId', Value: straatNaamId },
-      	{ Name: 'SorteerVeld', Value: sorteerVeld || 0 }
-      ])
-    }, function (data) {
-    	resolve($R.html(data));
-    }, 'html');
-	});*/
 };
-/*$R.ListWegsegmentenByStraatnaamId.parameters = [{
-	Name: "StraatnaamId",
-	Value: null,
-	Type: "Int32"
-}, {
-	Name: "SorteerVeld",
-	Value: null,
-	Type: "Int32"
-}];
-$R.ListWegsegmentenByStraatnaamId.request = function() {
-	$('#StraatnaamIdTxt').val($R.straatNaamId);
-  $R.execOperation($R.ListWegsegmentenByStraatnaamId.response);
-};
-$R.ListWegsegmentenByStraatnaamId.response = function() {
-	$R.straat.wegsegmentenCount = 0;
-  $R.straat.wegsegmentenLoaded = 0;
-  $('#results').find('tr:gt(0)').each(function(i) {
-    $R.straat.wegsegmentenCount++;
-    var id = parseInt($(this).find('td:first').text());
-    var status = parseInt($(this).find('td:nth-child(2)').text());
-    var wegsegment = new Wegsegment(id, status).load(function() {
-      $R.straat.wegsegmentenLoaded++;
-      for (var i = 0; i < this.line.length; i++) {
-        $R.gml.push(GML.point(this.line[i]));
-      }
-      $R.gml.push(GML.line(this.line));
-      if ($R.straat.wegsegmentenCount == $R.straat.wegsegmentenLoaded) {
-        $R.gml.push(GML.END);
-        console.log($R.gml.join('\n'));
-      }
-    });
-    $R.wegsegmenten.push(wegsegment);
-  });
-};*/
 $R.ListHuisnummersWithStatusByStraatnaamId = function(straatNaamId, sorteerVeld) {
 	return $R.post('ListHuisnummersWithStatusByStraatnaamId', {
 		StraatnaamId: straatNaamId,
 		SorteerVeld: sorteerVeld || 0
 	});
-	/*return new Promise(function(resolve, reject) {
-		var post = $R.encodePost('ListHuisnummersWithStatusByStraatnaamId', {
-			StraatnaamId: straatNaamId,
-			SorteerVeld: sorteerVeld || 0
-		});
-		var cache = localStorage[JSON.stringify(post)];
-		if (cache === undefined) {
-			$.post($R.POST, post, function (data) {
-	    	var response = $R.html(data);
-	    	localStorage[JSON.stringify(post)] = JSON.stringify(response);
-	    	resolve(response);
-	    }, 'html');
-		} else {
-			resolve(JSON.parse(cache));
-		}
-	});*/
 };
-/*$R.ListHuisnummersWithStatusByStraatnaamId.parameters = [{
-  Name: "StraatnaamId",
-  Value: null,
-  Type: "Int32"
-}, {
-  Name: "SorteerVeld",
-  Value: null,
-  Type: "Int32"
-}];
-$R.ListHuisnummersWithStatusByStraatnaamId.request = function() {
-  $('#StraatnaamIdTxt').val($R.straatNaamId);
-  $R.execOperation($R.ListHuisnummersWithStatusByStraatnaamId.response);
-};
-$R.ListHuisnummersWithStatusByStraatnaamId.response = function() {
-  $('#results').find('tr:gt(0)').each(function(i) {
-    var status = $(this).find('td:nth-child(3)').text();
-    if (status === '3') {
-      $R.huisNummers.push({
-        huisnummerId: $(this).find('td:first').text(),
-        huisnummer: $(this).find('td:nth-child(2)').text()
-      });
-    }
-  });
-  $R.changeOperation('ListGebouwenByHuisnummerId', $R.ListGebouwenByHuisnummerId.request);
-};*/
 $R.ListGebouwenByHuisnummerId = function(huisNummerId, sorteerVeld) {
 	return $R.post('ListGebouwenByHuisnummerId', {
 		HuisnummerId: huisNummerId,
 		SorteerVeld: sorteerVeld || 0
 	});
-	/*return new Promise(function(resolve, reject) {
-		var post = $R.encodePost('ListGebouwenByHuisnummerId', {
-			HuisnummerId: huisNummerId,
-			SorteerVeld: sorteerVeld || 0
-		});
-		var cache = localStorage[JSON.stringify(post)];
-		if (cache === undefined) {
-			$.post($R.POST, post, function (data) {
-	    	var response = $R.html(data);
-	    	localStorage[JSON.stringify(post)] = JSON.stringify(response);
-	    	resolve(response);
-	    }, 'html');
-		} else {
-			resolve(JSON.parse(cache));
-		}
-	});*/
 };
-/*$R.ListGebouwenByHuisnummerId.parameters = [{
-	Name: "HuisnummerId",
-	Value: null,
-	Type: "Int32"
-}, {
-	Name: "SorteerVeld",
-	Value: null,
-	Type: "Int32"
-}];
-$R.ListGebouwenByHuisnummerId.request = function() {
-  if ($R.huisNummers.length > 0) {
-    $('#HuisnummerIdTxt').val($R.huisNummers[0].huisnummerId);
-    $R.execOperation($R.ListGebouwenByHuisnummerId.response);
-  } else {
-    console.log($R.huizen.join('\n'));
-  }
-};
-$R.ListGebouwenByHuisnummerId.response = function() {
-  $R.huisNummers[0].identificatorGebouw = [];
-  $('#results').find('tr:gt(0)').each(function(i) {
-    var identificatorGebouw = $(this).find('td:first').text();
-    $R.huisNummers[0].identificatorGebouw.push(identificatorGebouw);
-  });
-  if ($R.huisNummers[0].identificatorGebouw.length !== 0) {
-    $R.changeOperation('GetGebouwByIdentificatorGebouw', $R.GetGebouwByIdentificatorGebouw.request);
-  } else {
-    $R.huisNummers = $R.huisNummers.slice(1);
-    $R.changeOperation('ListGebouwenByHuisnummerId', $R.ListGebouwenByHuisnummerId.request);
-  }
-};*/
-$R.GetGebouwByIdentificatorGebouw = function(identificatorGebouw) {
+$R.GetGebouwByIdentificatorGebouw = function(identificatorWegobject) {
 	return $R.post('GetGebouwByIdentificatorGebouw', {
-		IdentificatorGebouw: identificatorGebouw
+		IdentificatorGebouw: identificatorWegobject
 	}, true);
-	/*return new Promise(function(resolve, reject) {
-		var post = $R.encodePost('GetGebouwByIdentificatorGebouw', {
-			IdentificatorGebouw: identificatorGebouw
-		});
-		var cache = localStorage[JSON.stringify(post)];
-		if (cache === undefined) {
-	    $.post($R.POST, post, function (data) {
-	    	var response = $R.html(data)[0];
-	    	localStorage[JSON.stringify(post)] = JSON.stringify(response);
-	    	resolve(response);
-	    }, 'html');
-	  } else {
-	  	resolve(JSON.parse(cache));
-	  }
-	});*/
 };
-/*$R.GetGebouwByIdentificatorGebouw.parameters = [{
-	Name: "IdentificatorGebouw",
-	Value: null,
-	Type: "String"
-}];
-$R.GetGebouwByIdentificatorGebouw.request = function() {
-  $('#IdentificatorGebouwTxt').val($R.huisNummers[0].identificatorGebouw[0]);
-  $R.execOperation($R.GetGebouwByIdentificatorGebouw.response);
-};
-$R.GetGebouwByIdentificatorGebouw.response = function() {
-  var huis = $('#results').find('tr:gt(0)').find('td:nth-child(5)').text();
-  console.log($R.huisNummers[0].huisnummer);
-  huis = huis.split('POLYGON ((')[1].split('))')[0].split(', ');
-  huis.pop();
-  huis = 'addComplexHuis([[' + huis.join('],[').split(' ').join(',') + ']]);';
-  $R.huizen.push(huis);
-  $R.huisNummers[0].identificatorGebouw = $R.huisNummers[0].identificatorGebouw.slice(1);
-  if ($R.huisNummers[0].identificatorGebouw.length > 0) {
-    $R.changeOperation('GetGebouwByIdentificatorGebouw', $R.GetGebouwByIdentificatorGebouw.request);
-  } else {
-    $R.huisNummers = $R.huisNummers.slice(1);
-    $R.changeOperation('ListGebouwenByHuisnummerId', $R.ListGebouwenByHuisnummerId.request);
-  }
-};*/
 chrome.runtime.onConnect.addListener(function(port) {
   $R.port = port;
   port.onMessage.addListener($R.onMessage);
