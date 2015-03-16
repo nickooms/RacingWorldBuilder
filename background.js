@@ -1,5 +1,6 @@
 var baseURL = 'http://geo-vlaanderen.agiv.be/gdiviewer/';
 var baseURL2 = 'http://crab.agiv.be/examples/Home/WsCrab2Test';
+var baseURL3 = 'http://crab.agiv.be/Examples/';
 var proxyURL = 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms??LAYERS=GRB_WBN&EXCEPTIONS=XML&FORMAT=image%2Fpng&TRANSPARENT=TRUE&VERSION=1.3.0&SERVICE=WMS&REQUEST=GetMap&STYLES=&ISBASELAYER=false&REALMINSCALE=75000&REALMAXSCALE=250&CRS=EPSG%3A31370&BBOX=';
 var proxyURL2 = 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms??LAYERS=GRB_WGO&EXCEPTIONS=XML&FORMAT=image%2Fpng&TRANSPARENT=TRUE&VERSION=1.3.0&SERVICE=WMS&REQUEST=GetMap&STYLES=&ISBASELAYER=false&REALMINSCALE=1500&REALMAXSCALE=250&CRS=EPSG%3A31370&BBOX=';
 var proxyURL3 = 'http://geo-vlaanderen.agiv.be/proxy88/Proxy/RegularProxy.ashx?url=http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms??LAYERS=GRB_GBG&EXCEPTIONS=XML&FORMAT=image%2Fpng&TRANSPARENT=TRUE&VERSION=1.3.0&SERVICE=WMS&REQUEST=GetMap&STYLES=&ISBASELAYER=false&REALMINSCALE=75000&REALMAXSCALE=250&CRS=EPSG%3A31370&BBOX=';
@@ -29,7 +30,8 @@ function checkForValidUrl(tabId, changeInfo, tab) {
 };
 chrome.tabs.onUpdated.addListener(checkForValidUrl);
 chrome.webRequest.onBeforeRequest.addListener(function(details) {
-  var url = details.url.replace(baseURL, '');
+  console.log(details.url);
+  var url = details.url.replace(baseURL, '').replace(baseURL3, '');
   switch (details.type) {
     case 'stylesheet':
       switch (url) {
@@ -52,6 +54,7 @@ chrome.webRequest.onBeforeRequest.addListener(function(details) {
       }
       break;
     case 'script':
+
       switch (url) {
         case 'js/ExtJs-3.2.1/adapter/ext/ext-base.js':
         case 'js/Config/Config_Configureer.js':
@@ -77,6 +80,7 @@ chrome.webRequest.onBeforeRequest.addListener(function(details) {
         case 'js/ExtJs-3.2.1/statusbar/StatusBar.js':
         case 'js/GeneralFunctions.js':
         case 'js/GeoExt/script/GeoExt.js':
+        case 'Scripts/jquery-1.5.1.js':
         case 'js/OpenLayers-2.13.1/OpenLayers.js':
           return {
             redirectUrl: chrome.extension.getURL('empty.js')

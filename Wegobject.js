@@ -3,7 +3,23 @@ var Wegobject = function(id, aard) {
 	this.aard = aard;
 };
 Wegobject.prototype.load = function(callback) {
-	$.post($R.POST, {
+	var load = function(wegobject) {
+		this.center = {
+  		x: wegobject.CenterX,
+  		y: wegobject.CenterY
+  	};
+  	this.min = {
+  		x: wegobject.MinimumX,
+  		y: wegobject.MinimumY
+  	};
+  	this.max = {
+  		x: wegobject.MaximumX,
+  		y: wegobject.MaximumY
+  	};
+  	callback.bind(this)();
+	};
+	$R.GetWegobjectByIdentificatorWegobject(this.id).then(load.bind(this));
+	/*$.post($R.POST, {
     operation: 'GetWegobjectByIdentificatorWegobject',
     parametersJson: JSON.stringify([{
     	Name: 'IdentificatorWegobject',
@@ -24,6 +40,6 @@ Wegobject.prototype.load = function(callback) {
   		y: parseFloat(row[7].replace(',', '.'))
   	};
     callback.bind(this)();
-  }).bind(this), 'html');
+  }).bind(this), 'html');*/
   return this;
 };
