@@ -6,7 +6,7 @@
     "scripts": ["background.js"]
   },
   "page_action": {
-    "default_icon": "golf19x19.png",
+    "default_icon": "assets/golf19x19.png",
     "default_title": "Nick Ooms Racing World Builder",
     "default_popup": "popup.html"
   },
@@ -48,13 +48,24 @@
     "js": [
       "racing2.js",
       "jquery-1.5.1.js",
+      "Wegbanen.js",
       "Wegbaan.js",
       "Wegknoop.js",
       "Wegverbindingen.js",
       "Wegobject.js",
       "Wegsegment.js",
       "Straat.js",
-      "GML.js"
+      "GML.js",
+      "WMS.js",
+      "FloodFill.js",
+      "MarchingSquares.js",
+      "simplify.js",
+      "Polygon.js",
+      "Point.js",
+      "Bounds.js",
+      "ImageData.js",
+      "Canvas.js",
+      "CanvasRenderingContext2D.js"
     ]
   }],
   "permissions": [
@@ -68,10 +79,11 @@
     "http://geo-vlaanderen.agiv.be/gdiviewer/*",
     "http://grb.agiv.be/*",
     "http://crab.agiv.be/*",
-    "http://geo.api.agiv.be/*"
+    "http://geo.api.agiv.be/*",
+    "http://geo.agiv.be/*"
   ],
   "web_accessible_resources": [
-    "favicon.ico",
+    "assets/favicon.ico",
     "empty.js",
     "tiles/BBOX=238747.10016087,150000,347120.6502413,258373.55008043.png",
     "tiles/BBOX=22000,150000,130373.55008043,258373.55008043.png",
@@ -142,8 +154,8 @@
     "GetLegendGraphic&sld_version=1.1.0&layer=GRB_BASISKAART&STYLE=default&SCALE=250.00000000000003.png"
   ],
   "icons": {
-    "48": "golf48x48.png",
-    "128": "golf128x128.png"
+    "48": "assets/golf48x48.png",
+    "128": "assets/golf128x128.png"
   },
   "manifest_version": 2
 }

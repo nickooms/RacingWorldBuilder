@@ -256,7 +256,7 @@ chrome.webRequest.onBeforeRequest.addListener(function(details) {
     case 'other':
       if (details.url == 'http://geo-vlaanderen.agiv.be/favicon.ico') {
         return {
-          redirectUrl: chrome.extension.getURL('favicon.ico')
+          redirectUrl: chrome.extension.getURL('assets/favicon.ico')
         };
       } else {
         console.log('TYPE ' + details.type + '\n' + url);

@@ -1,6 +1,4 @@
-var Wegknoop = function() {
-	
-};
+var Wegknoop = function() {};
 Wegknoop.parse = function(knoop, parameters) {
 	knoop = knoop.replace("GetFeatureInfo results:\n\nLayer 'GRB_WKN'\n  Feature", '');
 	return {
@@ -10,6 +8,7 @@ Wegknoop.parse = function(knoop, parameters) {
 		height: parameters.HEIGHT,
 		bbox: parameters.BBOX,
 		x: parameters.I,
-		y: parameters.J
+		y: parameters.J,
+		wegverbindingen: {}
 	};
 };

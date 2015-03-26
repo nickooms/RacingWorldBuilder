@@ -1,9 +1,11 @@
 $R = window.Racing = {
 	MARGIN: 100,
+	MAX_WIDTH: 4000,
+	MAX_HEIGHT: 4000,
+	MAX_SCALE: 5,
   APP_ID: 'anoednchafajddgcjghfampiefekeoca',
   GET: 'http://geo-vlaanderen.agiv.be/CRABREST/crab.svc/',//GetLocation/?GemeenteId=23&StraatId=7338 || TestPostkanton
   POST: '/Examples/Home/ExecOperation',
-  WMS_GRB: 'http://geo.api.agiv.be/geodiensten/raadpleegdiensten/GRB/wms?',
   ready: false,
   onMessage: function(msg) {
     if (!$R.ready) {
@@ -14,247 +16,6 @@ $R = window.Racing = {
         $R.showGemeente(msg.gemeenteNaam, msg.straatNaam);
         break;
     }
-  },
-  wmsGetMap: function(layers, width, height, minX, minY, maxX, maxY) {
-  	var parameters = {
-  		LAYERS: layers || 'GRB_basiskaart',
-  		EXCEPTIONS: 'XML',
-  		FORMAT: 'image/png',
-  		TRANSPARENT: 'TRUE',
-  		VERSION: '1.3.0',
-  		SERVICE: 'WMS',
-  		REQUEST: 'GetMap',
-  		STYLES: '',
-  		ISBASELAYER: 'false',
-  		REALMINSCALE: '15000',
-  		REALMAXSCALE: '250',
-  		CRS: 'EPSG:31370',
-  		BBOX: [minX, minY, maxX, maxY].join(','),
-  		WIDTH: width || 1000,
-  		HEIGHT: height || 1000
-  	};
-  	var params = [];
-  	for (var paramName in parameters) {
-  		params.push(paramName + '=' + parameters[paramName]);
-  	}
-  	var url = $R.WMS_GRB + params.join('&');
-  	return new Promise(function(resolve, reject) {
-  		var processImageData = function(imageData) {
-  			//console.log(url);
-  			//console.log(imageData);
-  			var parameters = {};
-  			for (var param of url.replace($R.WMS_GRB, '').split('&')) {
-  				param = param.split('=');
-  				parameters[param[0]] = param[1];
-  			}
-  			resolve({
-  				parameters: parameters,
-  				imageData: imageData
-  			});
-  		};
-  		var cache = localStorage[url];
-  		if (cache === undefined) {
-	  		var xhr = new XMLHttpRequest();
-				xhr.open('GET', url, true);
-				xhr.responseType = 'blob';
-				xhr.onreadystatechange = function() {
-				  if (xhr.readyState == 4) {
-				    var img = new Image();
-			  		img.onload = function(evt) {
-			  			var image = evt.target;
-			  			var width = image.width;
-			  			var height = image.height;
-			  			window.URL.revokeObjectURL(image.src);
-			  			var canvas = document.createElement('canvas');
-			  			canvas.width = width;
-			  			canvas.height = height;
-			  			var context = canvas.getContext('2d');
-			  			context.drawImage(image, 0, 0);
-			  			localStorage[xhr.responseURL] = canvas.toDataURL('image/png');
-			  			var imageData = context.getImageData(0, 0, width, height);
-			  			processImageData(imageData, xhr.responseURL);
-			  		};
-			  		var objectUrl = window.URL.createObjectURL(xhr.response);
-				    img.src = objectUrl;
-				  }
-				};
-				xhr.send();
-			} else {
-				var img = new Image();
-	  		img.onload = function(evt) {
-	  			var image = evt.target;
-			  	var width = image.width;
-			  	var height = image.height;
-	  			var canvas = document.createElement('canvas');
-	  			canvas.width = width;
-			  	canvas.height = height;
-	  			var context = canvas.getContext('2d');
-	  			context.drawImage(image, 0, 0);
-	  			var imageData = context.getImageData(0, 0, width, height);
-	  			processImageData(imageData, url);
-	  		};
-		    img.src = cache;
-			}
-  	});
-  },
-  wmsGetFeatureInfo: function(layers, width, height, bbox, x, y) {
-  	return new Promise(function(resolve, reject) {
-  		var parameters = {
-	  		LAYERS: layers || 'GRB_WKN',
-	  		QUERY_LAYERS: layers || 'GRB_WKN',
-	  		STYLES: '',
-	  		SERVICE: 'WMS',
-	  		VERSION: '1.3.0',
-	  		REQUEST: 'GetFeatureInfo',
-	  		EXCEPTIONS: 'XML',
-	  		BBOX: bbox,
-	  		FEATURE_COUNT: 10,
-	  		WIDTH: width,
-	  		HEIGHT: height,
-	  		FORMAT: 'image/png',
-	  		INFO_FORMAT: 'text/plain',
-	  		CRS: 'EPSG:31370',
-	  		I: x,
-	  		J: y
-	  	};
-	  	var params = [];
-	  	for (var paramName in parameters) {
-	  		params.push(paramName + '=' + parameters[paramName]);
-	  	}
-	  	var url = $R.WMS_GRB + params.join('&');
-	  	var parseResults = function(results) {
-	  		switch (parameters.LAYERS) {
-	  			case 'GRB_WKN':
-	  				//resolve(parseWegknoop(results));
-	  				resolve(Wegknoop.parse(results, parameters));
-	  				break;
-	  			case 'GRB_WVB':
-	  				//resolve(parseWegverbindingen(results));
-	  				resolve(Wegverbindingen.parse(results, parameters));
-	  				break;
-	  			case 'GRB_WBN':
-	  				//resolve(parseWegbaan(results));
-	  				resolve(Wegbaan.parse(results, parameters));
-	  				break;
-	  		}
-	  	};
-  		/*var parseWegknoop = function(knoop) {
-  			knoop = knoop.replace("GetFeatureInfo results:\n\nLayer 'GRB_WKN'\n  Feature", '');
-  			return {
-  				objectType: 'Wegknoop',
-  				id: parseInt(knoop.split(':')[0]),
-  				width: parameters.WIDTH,
-  				height: parameters.HEIGHT,
-  				bbox: parameters.BBOX,
-  				x: parameters.I,
-  				y: parameters.J
-  			};
-  		};*/
-  		/*var parseWegverbindingen = function(wegverbindingen) {
-  			wegverbindingen = wegverbindingen.replace("GetFeatureInfo results:\n\nLayer 'GRB_WVB'\n  Feature", '').split('  Feature');
-  			for (var i = 0; i < wegverbindingen.length; i++) {
-  				var wegverbinding = wegverbindingen[i].split('\n');
-  				wegverbindingen[i] = {
-  					objectType: 'Wegverbinding',
-  					id: parseInt(wegverbinding[0].split(':')[0]),
-  					width: parameters.WIDTH,
-	  				height: parameters.HEIGHT,
-	  				bbox: parameters.BBOX,
-	  				x: parameters.I,
-	  				y: parameters.J
-  				};
-  				for (var j = 1; j < wegverbinding.length; j++) {
-  					var property = wegverbinding[j].split(' = ');
-  					if (property.length === 2) {
-	  					var propertyName = property[0].replace('    ', '');
-	  					var propertyValue = property[1].split("'").join('');
-	  					switch (propertyName) {
-	  						case 'uidn':
-	  						case 'oidn':
-	  						case 'lniscode':
-	  						case 'lstrnmid':
-	  						case 'rniscode':
-	  						case 'rstrnmid':
-	  						case 'verh':
-	  						case 'wegnummer':
-	  						case 'morf':
-	  						case 'opndatum':
-	  						case 'lgemeente':
-	  						case 'rgemeente':
-	  						case 'rstrnm':
-	  							break;
-	  						case 'gid':
-	  							wegverbindingen[i].id = parseInt(propertyValue);
-	  							break;
-	  						case 'lstrnm':
-	  							wegverbindingen[i].straatnaam = propertyValue;
-	  							break;
-	  						case 'lengte':
-	  							wegverbindingen[i].lengte = parseFloat(propertyValue);
-	  							break;
-	  						default:
-	  							wegverbindingen[i][propertyName] = propertyValue;
-	  					}
-	  				}
-  				}
-  			}
-  			return wegverbindingen;
-  		};*/
-  		/*var parseWegbaan = function(wegbaan) {
-  			wegbaan = wegbaan.replace("GetFeatureInfo results:\n\nLayer 'GRB_WBN'\n  Feature", '').split(':');
-  			var properties = wegbaan[1].split('\n');
-  			wegbaan = {
-  				objectType: 'Wegbaan',
-  				id: parseInt(wegbaan[0]),
-  				width: parameters.WIDTH,
-  				height: parameters.HEIGHT,
-  				bbox: parameters.BBOX,
-  				x: parameters.I,
-  				y: parameters.J
-  			};
-  			for (var i = 0; i < properties.length; i++) {
-  				var property = properties[i].split(' = ');
-  				if (property.length == 2) {
-  					var propertyName = property[0].replace('    ', '');
-	  				var propertyValue = property[1].split("'").join('');
-	  				switch (propertyName) {
-	  					case 'uidn':
-	  					case 'oidn':
-	  					case 'opndatum':
-	  					case 'type':
-	  						break;
-	  					case 'gid':
-	  						wegbaan.id = parseInt(propertyValue);
-	  						break;
-	  					case 'lengte':
-	  					case 'oppervl':
-	  						wegbaan[propertyName] = parseFloat(propertyValue);
-	  						break;
-	  					case 'lbltype':
-	  						wegbaan.type = propertyValue;
-	  						break;
-	  					default:
-	  						wegbaan[propertyName] = propertyValue;
-	  				}
-  				}
-  			}
-  			return wegbaan;
-  		};*/
-  		var cache = localStorage[url];
-  		if (cache === undefined) {
-	  		var xhr = new XMLHttpRequest();
-				xhr.open('GET', url, true);
-				xhr.onreadystatechange = function() {
-				  if (xhr.readyState == 4) {
-				  	localStorage[url] = xhr.responseText;
-				  	parseResults(xhr.responseText);
-				  }
-				};
-				xhr.send();
-			} else {
-				parseResults(cache);
-			}
-		});
   },
   post: function(name, parameters, singleObject) {
 		return new Promise(function(resolve, reject) {
@@ -291,6 +52,7 @@ $R = window.Racing = {
     return data.split('</tr><tr><td>')[1].split('</td></tr>')[0].split('</td><td>');
   },
   init: function() {
+  	$('#results, h1, h2, select, table, br, input').css('display', 'none');
     $R.huisNummers = [];
     $R.wegobjecten = [];
     $R.wegsegmenten = [];
@@ -299,8 +61,230 @@ $R = window.Racing = {
     $R.wegbanen = {};
     $R.huizen = [];
     $R.gml = [];
+    $R.polygons = [];
     $R.ready = true;
+    $R.Wegbanen = new Wegbanen();
+    $R.Wegbanen.loaded(function() {
+    	for (var wegbaan of this) {
+  			var bbox = wegbaan.bbox();
+  			$R.getWegbaanBounds(bbox, wegbaan, 1);
+  		}
+  	});
   },
+  getMaxScale: function(scale, w, h) {
+  	var maxScale = Math.floor(Math.min(Math.max($R.MAX_WIDTH / (w * scale), $R.MAX_HEIGHT / (h * scale)), $R.MAX_SCALE));
+  	//console.log(['maxScale', maxScale, scale, w, h]);
+  	return maxScale;
+  },
+  getWegbaanBounds: function(bbox, wegbaan, scale) {
+		var min = {
+			x: bbox[0],
+			y: bbox[1]
+		};
+		var max = {
+			x: bbox[2],
+			y: bbox[3]
+		};
+		var width = max.x - min.x;
+		var height = max.y - min.y;
+		if (scale != 1) {
+			var maxScale = $R.getMaxScale($R.MAX_SCALE, width, height);
+		} else {
+			var maxScale = $R.getMaxScale(1, width, height);
+		}
+		//console.log([wegbaan.id, maxScale, width, height]);
+		WMS.getMap('GRB_WBN', width * maxScale, height * maxScale, min.x, min.y, max.x, max.y, wegbaan).then(function(map) {
+			//console.log(map);
+			var wegbaan = map.object;
+			var imageData = map.imageData;
+			var canvas = document.createElement('canvas');
+			var width = imageData.width;
+			var height = imageData.height;
+			var bbox = map.parameters.bbox.split(',');
+			var left = parseInt(bbox[0]);
+			var right = parseInt(bbox[2]);
+			var top = parseInt(bbox[1]);
+			var bottom = parseInt(bbox[3]);
+			bbox = wegbaan.bbox();
+			var scaleX = width / (right - left);
+			var scaleY = height / (bottom - top);
+			var scale = (scaleX + scaleY) / 2;
+			var maxScale = $R.getMaxScale(scale, width, height);
+			//console.log([wegbaan.id, maxScale]);
+			//console.log([scaleX, scaleY]);
+			canvas.width = width;
+			canvas.height = height;
+			var context = canvas.getContext('2d');
+			context.putImageData(imageData, 0, 0);
+			context.strokeStyle = '#000000';
+			var filled = null;
+			for (var i = 0; i < wegbaan.points.length; i++) {
+				var point = wegbaan.points[i];
+				var left = parseInt(point.bbox[0] - bbox[0]) * scaleX;
+				var top = parseInt(point.bbox[1] - bbox[1]) * scaleY;
+				var right = -parseInt(point.bbox[2] - bbox[2]) * scaleX;
+				var bottom = -parseInt(point.bbox[3] - bbox[3]) * scaleY;
+				var w = width - (left + right);
+				var h = height - (top + bottom);
+				var x = left + w;
+				var y = 1 + height - (top + h);
+				imageData = context.getImageData(0, 0, width, height);
+				data = imageData.data;
+				var offset = (x + y * width) * 4;
+				var r = data[offset];
+				var g = data[offset + 1];
+				var b = data[offset + 2];
+				var a = data[offset + 3];
+				var color = r << 16 | g << 8 | b;
+				var wegbaanColor = Wegbaan.COLOR[wegbaan.type];
+				if (a != 0x00) {
+					if (color !== wegbaanColor.fill) {
+						var foundColor = $R.findColor(imageData, x, y, wegbaanColor.find, 3 * scale, wegbaanColor.fill);
+						if (foundColor) {
+							if (foundColor.color != wegbaanColor.fill) {
+								filled = floodFill(canvas, foundColor.x, foundColor.y, wegbaanColor.flood, 0xff);
+							}
+						} else {
+	  					context.strokeRect(x, y, 1, 1);
+						}
+  				}
+	  		} else {
+	  			console.log(a);
+	  		}
+			}
+			if (filled.x > 0 && filled.x + filled.width < width && filled.y > 0 && filled.y + filled.height < height) {
+				//console.log([wegbaan.id, scaleX, scaleY, wegbaan.bounds]);
+				//wegbaan = $R.Wegbanen.get(wegbaan.id);
+				//console.log([wegbaan.id, scaleX, scaleY, wegbaan.bounds]);
+				if (wegbaan.bounds === undefined) {
+					wegbaan.bounds = {};
+					var cropped = context.getImageData(filled.x, filled.y, filled.width, filled.height);
+					var bbox = wegbaan.bbox();
+					var maxScale = $R.getMaxScale(5, filled.width, filled.height);
+
+					//setTimeout(function() {
+						$R.getWegbaanBounds(bbox, wegbaan, maxScale);
+					//}, 0);
+				} else {
+					wegbaan.border = {};
+					var w = filled.width;
+					var h = filled.height;
+					var cropped = context.getImageData(filled.x, filled.y, w, h);
+					canvas.width = w;
+					canvas.height = h;
+					var data = cropped.data;
+					var colors = {};
+					for (var y = 0; y < h; y++) {
+						for (var x = 0; x < w; x++) {
+							var offset = (x + y * w) * 4;
+							var r = data[offset];
+							var g = data[offset + 1];
+							var b = data[offset + 2];
+							var a = data[offset + 3];
+							var color = r << 16 | g << 8 | b;
+							if (color !== 0xff0000 && color !== 0x00ff00) {
+								data[offset] = 0;
+								data[offset + 1] = 0;
+								data[offset + 2] = 0;
+								data[offset + 3] = 0;
+							}
+						}
+					}
+					context.clearRect(0, 0, w, h);
+					context.putImageData(cropped, 0, 0);
+					canvas.style.border = '1px solid #000000';
+					document.body.appendChild(canvas);
+					var result = MarchingSquares.getBlobOutlinePoints(canvas);
+					if (result.length > 0) {
+						var theBorder = [];
+						for (var borderIndex = 0; borderIndex < result.length / 2; borderIndex++) {
+							var borderPoint = {
+								x: result[borderIndex * 2],
+								y: result[borderIndex * 2 + 1]
+							};
+							theBorder.push(borderPoint);
+						}
+						var corners = simplify(theBorder, 2, true);
+						var polygon = [];
+				    var corner = corners[0];
+				    var bbox = map.parameters.bbox.split(',');
+						var left = parseInt(bbox[0]);
+						var right = parseInt(bbox[2]);
+						var top = parseInt(bbox[1]);
+						var bottom = parseInt(bbox[3]);
+				    for (var k = 0; k < corners.length; k++) {
+				      corner = corners[k];
+				      var xPos = (left + ((corner.x + filled.x) / width) * (right - left)).toFixed(2);
+				      var yPos = (bottom - ((corner.y + filled.y) / height) * (bottom - top)).toFixed(2);
+					    polygon.push('[' + xPos + ',' + yPos + ']');
+				    }
+				    $R.polygons.push("addComplexBaan(" + wegbaan.id + ", '" + (wegbaan.type) + "', [" + polygon.join(',') + "]);");
+				    console.log([wegbaan.id, wegbaan.type]);
+					}
+				}
+			} else {
+				//console.log(['--', wegbaan.id, scale, width, height]);
+				var maxScale = $R.getMaxScale($R.MAX_SCALE, width, height);
+				//console.log(['MAX_SCALE', maxScale, scale === maxScale, scale, maxScale]);
+				/*bbox[0] *= maxScale / scale;
+				bbox[1] *= maxScale / scale;
+				bbox[2] *= maxScale / scale;
+				bbox[3] *= maxScale / scale;*/
+				var bbox = wegbaan._bbox;
+				if (filled.x == 0) {
+					bbox[0] -= width * maxScale / scale;
+				}
+				if (filled.y == 0) {
+					bbox[3] += height * maxScale / scale;
+				}
+				if (filled.x + filled.width == width) {
+					bbox[2] += width * maxScale / scale;
+				}
+				if (filled.y + filled.height == height) {
+					bbox[1] -= height * maxScale / scale;
+				}
+				var w = bbox[2] - bbox[0];
+				var h = bbox[3] - bbox[1];
+				//var maxScale = Math.floor(Math.min(Math.max($R.MAX_WIDTH / (w * scale), $R.MAX_HEIGHT / (h * scale)), $R.MAX_SCALE));
+				//console.log(['adjust', wegbaan.id, width, height, maxScale]);
+				$R.getWegbaanBounds(bbox, wegbaan, maxScale);
+			}
+		});
+	},
+  getColor: function(imageData, x, y) {
+  	var data = imageData.data;
+  	var width = imageData.width;
+		var offset = (x + y * width) * 4;
+		var r = data[offset];
+		var g = data[offset + 1];
+		var b = data[offset + 2];
+		var a = data[offset + 3];
+		var color = r << 16 | g << 8 | b;	  					
+		return color;
+	},
+	findColor: function(imageData, x, y, color, range, color2) {
+		var colors = {};
+		for (var i = x - range; i < x + range; i++) {
+			for (var j = y - range; j < y + range; j++) {
+				var foundColor = $R.getColor(imageData, i, j);
+				if (foundColor == color || foundColor == color2) {
+					return {
+						x: i,
+						y: j,
+						color: foundColor
+					};
+				} else {
+					colors['#' + foundColor.toString(16)] = true;
+				}
+			}
+		}
+		var foundColors = [];
+		for (var foundColor in colors) {
+			foundColors.push(foundColor);
+		}
+		console.log(foundColors.join('\n'));
+		return null;
+	},
   html: function(data) {
 		var rows = data.replace("<table border='1' cellspacing='0'><tr><td>", '').split('</td></tr></table>')[0].split('<i>').join('').split('</i>').join('').split('<b>').join('').split('</b>').join('').split('</td></tr><tr><td>');
 		var colNames = rows[0].split('</td><td>');
@@ -360,10 +344,87 @@ $R = window.Racing = {
 	  };
 		var getGebouw = function() {
 			$R.GetGebouwByIdentificatorGebouw($R.huisNummers[0].identificatorGebouw[0]).then(function(gebouw) {
-				var huis = gebouw.Geometrie;
-			  huis = huis.split('POLYGON ((')[1].split('))')[0].split(', ');
-			  huis.pop();
-			  huis = 'addComplexHuis([[' + huis.join('],[').split(' ').join(',') + ']]);';
+				gebouw.huisnummer = $R.huisNummers[0].Huisnummer;
+				var size = 10;
+				gebouw.polygon = Polygon.fromWKT(gebouw.Geometrie);
+				var bounds = gebouw.polygon.bounds();
+				bounds.round();
+				bounds.expand(1);
+			  gebouw.width = bounds.width() * size;
+			  gebouw.height = bounds.height() * size;
+			  gebouw.min = bounds.min;
+			  gebouw.max = bounds.max;
+			  WMS.getMap('DHMVII_DSM_1m', gebouw.width, gebouw.height, gebouw.min.x, gebouw.min.y, gebouw.max.x, gebouw.max.y, gebouw).then(function(map) {
+			  	var gebouw = map.object;
+			  	var imageData = map.imageData;
+			  	var canvas = new Canvas(imageData, '1px solid #000000');
+			  	canvas.title = $R.straatNaam + ' ' + gebouw.huisnummer;
+			  	document.body.appendChild(canvas);
+				  WMS.getMap('GRB_GBG', gebouw.width, gebouw.height, gebouw.min.x, gebouw.min.y, gebouw.max.x, gebouw.max.y, [canvas, gebouw]).then(function(map) {
+				  	var canvas = map.object[0];
+				  	var gebouw = map.object[1];
+				  	var context = canvas.getContext('2d');
+				  	/*var imageData = map.imageData;
+				  	imageData.removeColor(0xfa7d69);
+				  	imageData.removeColor(0xfa9b87);
+				  	context.drawImage(new Canvas(imageData), 0, 0);*/
+				  	var polygon = gebouw.polygon;
+				  	var bounds = polygon.bounds();
+				  	var minX = bounds.min.x;
+				  	var maxY = bounds.max.y;
+				  	var size = 10;
+				  	var left = parseInt((minX - gebouw.min.x) * size);
+				  	var top = parseInt((gebouw.max.y - maxY) * size);
+				  	var border = [[0, 0], [gebouw.width, 0], [gebouw.width, gebouw.height], [0, gebouw.height]];
+				  	var hole = [];
+				  	for (var point of polygon.points) {
+				  		hole.push([left + parseInt((point.x - minX) * size), top + parseInt(-(point.y - maxY) * size)]);
+				  	}
+				  	context.drawPolygon(border, [hole]);
+				  	var width = canvas.width;
+				  	var height = canvas.height;
+				  	var imageData = context.getImageData(0, 0, width, height);
+				  	imageData.removeColor(0xffffff);
+				  	var data = imageData.data;
+				  	var rmin = Infinity;
+				  	var rmax = -Infinity;
+				  	var gmin = Infinity;
+				  	var gmax = -Infinity;
+				  	var bmin = Infinity;
+				  	var bmax = -Infinity;
+				  	var min = Infinity;
+				  	var max = -Infinity;
+				  	var data32 = new Float32Array/*Uint32Array*/(data.buffer);
+				  	var dataView = new DataView(data.buffer);
+				  	//console.log(dataView);
+				  	for (var x = 0; x < width; x++) {
+				  		for (var y = 0; y < height; y++) {
+				  			var offset = (x + y * width);
+				  			var value = data32[offset];
+				  			//var value = dataView.getFloat32(offset, false);
+				  			/*var r = data[offset];
+				  			var g = data[offset + 1];
+				  			var b = data[offset + 2];
+				  			var a = data[offset + 3];
+				  			if (a != 0) {
+					  			rmin = Math.min(r, rmin);
+					  			rmax = Math.max(r, rmax);
+					  			gmin = Math.min(g, gmin);
+					  			gmax = Math.max(g, gmax);
+					  			bmin = Math.min(b, bmin);
+					  			bmax = Math.max(b, bmax);
+					  		}*/
+					  		if (!isNaN(value)) {
+					  			min = Math.min(value, min);
+					  			max = Math.max(value, max);
+					  		}
+				  		}
+				  	}
+				  	//console.log([rmin, rmax, gmin, gmax, bmin, bmax]);
+				  	console.log([min, max]);
+				  });
+			  });
+			  var huis = 'addComplexHuis(' + gebouw.polygon.toFixed(2) + ');';
 			  $R.huizen.push(huis);
 			  $R.huisNummers[0].identificatorGebouw = $R.huisNummers[0].identificatorGebouw.slice(1);
 			  if ($R.huisNummers[0].identificatorGebouw.length > 0) {
@@ -388,12 +449,14 @@ $R = window.Racing = {
         }
         var width = max.x - min.x;
 	    	var height = max.y - min.y;
-	    	$R.wmsGetMap('GRB_WKN', width * 10, height * 10, min.x, min.y, max.x, max.y).then(function(wegknoop) {
+	    	$R.Wegbanen.add();
+	    	WMS.getMap('GRB_WKN', width * 10, height * 10, min.x, min.y, max.x, max.y).then(function(wegknoop) {
 	    		var imageData = wegknoop.imageData;
 	    		var data = imageData.data;
 	    		var width = imageData.width;
 	    		var height = imageData.height;
 	    		var parameters = wegknoop.parameters;
+	    		var bbox = parameters.bbox.split(',');
 	    		for (var x = 0; x < width; x++) {
 	    			for (var y = 0; y < height; y++) {
 	    				var offset = (y * width + x) * 4;
@@ -402,65 +465,60 @@ $R = window.Racing = {
 	    				var b = data[offset + 2];
 	    				var a = data[offset + 3];
 	    				if (a === 0xff) {
-	    					$R.wmsGetFeatureInfo('GRB_WKN', width, height, parameters.BBOX, x, y).then(function(knoop) {
+	    					WMS.getFeatureInfo('GRB_WKN', width, height, bbox, x, y).then(function(knoop) {
 	    						if ($R.wegknopen[knoop.id] === undefined) {
-	    							knoop.wegverbindingen = {};
 	    							$R.wegknopen[knoop.id] = knoop;
-	    							console.log(knoop);
+	    							//console.log(knoop);
 	    						}
-	    						$R.wmsGetFeatureInfo('GRB_WVB', width, height, parameters.BBOX, x, y).then(function(wegverbindingen) {
+	    						WMS.getFeatureInfo('GRB_WVB', width, height, bbox, x, y).then(function(wegverbindingen) {
 	    							for (var wegverbinding of wegverbindingen) {
 	    								if ($R.wegverbindingen[wegverbinding.id] === undefined) {
-	    									wegverbinding.wegknopen = {};
 	    									$R.wegverbindingen[wegverbinding.id] = wegverbinding;
-	    									console.log(wegverbinding);
+	    									//console.log(wegverbinding);
 	    								}
 	    								$R.wegverbindingen[wegverbinding.id].wegknopen[knoop.id] = knoop.id;
 	    								$R.wegknopen[knoop.id].wegverbindingen[wegverbinding.id] = wegverbinding.straatnaam;
 	    							}
 	    						});
-	    						$R.wmsGetFeatureInfo('GRB_WBN', width, height, parameters.BBOX, x, y).then(function(wegbaan) {
-	    							if ($R.wegbanen[wegbaan.id] === undefined) {
-	    								wegbaan.wegknopen = {};
-	    								wegbaan.wegverbindingen = {};
-	    								$R.wegbanen[wegbaan.id] = wegbaan;
-	    								console.log(wegbaan);
-	    							}
-	    							$R.wegbanen[wegbaan.id].wegknopen[knoop.id] = knoop.id;
+	    						WMS.getFeatureInfo('GRB_WBN', width, height, bbox, x, y).then(function(wegbaan) {
+	    							wegbaan = $R.Wegbanen.add(wegbaan);
+	    							wegbaan.wegknopen[knoop.id] = knoop.id;
+	    						}).catch(function() {
+	    							$R.Wegbanen.remove();
 	    						});
 	    					});
 	    					return;
 	    				}
 	    			}
 	    		}
-	    		$R.wmsGetFeatureInfo('GRB_WBN', width, height, parameters.BBOX, x, y).then(function(wegbaan) {
-	    			if ($R.wegbanen[wegbaan.id] === undefined) {
-	    				wegbaan.wegknopen = {};
-	    				wegbaan.wegverbindingen = {};
-							$R.wegbanen[wegbaan.id] = wegbaan;
-							console.log(wegbaan);
-						}
-	    		});
+	    		WMS.getFeatureInfo('GRB_WBN', width, height, bbox, x, y).then(function(wegbaan) {
+	    			wegbaan = $R.Wegbanen.add(wegbaan);
+	    		}).catch(function() {
+						$R.Wegbanen.remove();
+					});
 	    	});
       }
       $R.gml.push(GML.line(this.line));
       if ($R.straat.wegsegmentenCount == $R.straat.wegsegmentenLoaded) {
         $R.gml.push(GML.END);
         //console.log($R.gml.join('\n'));
-        $R.ListHuisnummersWithStatusByStraatnaamId($R.straat.id).then(function(huisNummers) {
-		    	$R.huisNummers = huisNummers.filter(function(huisNummer) {
-		    		if (huisNummer.StatusHuisnummer == 3) {
-    					return {
-				        huisnummerId: huisNummer.HuisnummerId,
-				        huisnummer: huisNummer.Huisnummer
-				      };
-				    } else {
-				    	return null;
-				    }
-				  });
-				  listGebouwen();
-		    });
+        listHuisnummers();
       }
+    };
+    var listHuisnummers = function() {
+    	$R.ListHuisnummersWithStatusByStraatnaamId($R.straat.id).then(function(huisNummers) {
+	    	$R.huisNummers = huisNummers.filter(function(huisNummer) {
+	    		if (huisNummer.StatusHuisnummer == 3) {
+  					return {
+			        huisnummerId: huisNummer.HuisnummerId,
+			        huisnummer: huisNummer.Huisnummer
+			      };
+			    } else {
+			    	return null;
+			    }
+			  });
+			  listGebouwen();
+	    });
     };
 		var wegobjectLoaded = function() {
 			$R.straat.wegobjectenLoaded++;
@@ -490,10 +548,6 @@ $R = window.Racing = {
 	      y: this.max.y + margin
 	    };
 	    $R.gml.push(GML.polygon([min, { x: max.x, y: min.y }, max, { x: min.x, y: max.y }, min]));
-	    var width = Math.ceil(max.x) - Math.floor(min.x);
-	    var height = Math.ceil(max.y) - Math.floor(min.y);
-	    //$R.wmsGetFeatureInfo('GRB_WKN');
-	    //$R.wmsGetMap('GRB_WKN', width * 10, height * 10, Math.floor(min.x), Math.floor(min.y), Math.ceil(max.x), Math.ceil(max.y));
 			$R.ListWegobjectenByStraatnaamId(this.id).then(function(wegobjecten) {
 				$R.straat.wegobjectenCount = wegobjecten.length;
 			  $R.straat.wegobjectenLoaded = 0;

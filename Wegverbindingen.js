@@ -1,6 +1,4 @@
-var Wegverbindingen = function() {
-	
-};
+var Wegverbindingen = function() {};
 Wegverbindingen.parse = function(wegverbindingen, parameters) {
 	wegverbindingen = wegverbindingen.replace("GetFeatureInfo results:\n\nLayer 'GRB_WVB'\n  Feature", '').split('  Feature');
 	for (var i = 0; i < wegverbindingen.length; i++) {
@@ -12,7 +10,8 @@ Wegverbindingen.parse = function(wegverbindingen, parameters) {
 			height: parameters.HEIGHT,
 			bbox: parameters.BBOX,
 			x: parameters.I,
-			y: parameters.J
+			y: parameters.J,
+			wegknopen: {}
 		};
 		for (var j = 1; j < wegverbinding.length; j++) {
 			var property = wegverbinding[j].split(' = ');
