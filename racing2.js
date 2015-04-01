@@ -76,8 +76,8 @@ $R = window.Racing = {
   			var bbox = wegbaan.bbox();
   			$R.getWegbaanBounds(bbox, wegbaan, 1);
   			var bbox = wegbaan.bbox();
-  			console.log(bbox);
-  			console.log(wegbaan);
+  			//console.log(bbox);
+  			//console.log(wegbaan);
   			var width = Math.abs(bbox[0] - bbox[2]) * 5;
   			var height = Math.abs(bbox[1] - bbox[3]) * 5;
   			var min = new Point(Math.min(bbox[0], bbox[2]), Math.min(bbox[1], bbox[3]));
@@ -97,7 +97,7 @@ $R = window.Racing = {
 					var canvas = new Canvas(map.imageData, '1px solid #000000');
   				var wegbaan = map.object
   				canvas.id = 'Wegverbinding' + wegbaan.id;
-  				//canvas.style.display = 'none';
+  				canvas.style.display = 'none';
   				document.body.appendChild(canvas);
 				});
   			//console.log(document.body.getElementsByTagName('canvas').length);
@@ -230,6 +230,7 @@ $R = window.Racing = {
   	return maxScale;
   },
   getWegbaanBounds: function(bbox, wegbaan, scale) {
+  	console.log(bbox, scale);
 		var min = {
 			x: bbox[0],
 			y: bbox[1]
@@ -265,6 +266,9 @@ $R = window.Racing = {
 			canvas.height = height;
 			var context = canvas.getContext('2d');
 			context.putImageData(imageData, 0, 0);
+			var img = document.createElement('img');
+			img.src = canvas.toDataURL();
+			document.body.appendChild(img);
 			context.strokeStyle = '#000000';
 			var filled = null;
 			for (var i = 0; i < wegbaan.points.length; i++) {
@@ -309,7 +313,7 @@ $R = window.Racing = {
 					var maxScale = $R.getMaxScale(5, filled.width, filled.height);
 					setTimeout(function() {
 						$R.getWegbaanBounds(bbox, wegbaan, maxScale);
-					}, 100);
+					}, 0);
 				} else {
 					wegbaan.border = {};
 					var w = filled.width;
@@ -317,8 +321,12 @@ $R = window.Racing = {
 					var wegopdeling = document.getElementById('Wegopdeling' + wegbaan.id);
 					var wegverbinding = document.getElementById('Wegverbinding' + wegbaan.id);
 					var ctx = wegopdeling.getContext('2d');
-					var wegopdelingCropped = ctx.getImageData(filled.x, filled.y, w, h);
+					var offsetX = wegopdeling.width - parseInt(map.parameters.width);
+					var offsetY = wegopdeling.height - parseInt(map.parameters.height);
+					var wegopdelingCropped = ctx.getImageData(filled.x + offsetX, filled.y + offsetY, w, h);
 					var cropped = context.getImageData(filled.x, filled.y, w, h);
+					//console.log(map.parameters.width, map.parameters.height);
+					
 					canvas.width = w;
 					canvas.height = h;
 					var data = cropped.data;
@@ -340,6 +348,10 @@ $R = window.Racing = {
 						}
 					}
 					var wegopdelingImageData = wegopdeling.getContext('2d').getImageData(0, 0, wegopdeling.width, wegopdeling.height);
+					wegopdelingImageData.removeTransparent(0x3f);
+					wegopdelingImageData.removeRange(0xaa, 0xff, 0x6d, 0xd7, 0x00, 0x02); //yellow
+					wegopdelingImageData.removeRange(0x8c, 0xc0, 0x41, 0x65, 0x00, 0x17); //brown
+					//wegopdelingImageData.showColors();
 			    var data = wegopdelingImageData.data;
 			    for (var y = 0; y < wegopdeling.height; y++) {
 				    for (var x = 0; x < wegopdeling.width; x++) {
@@ -348,72 +360,29 @@ $R = window.Racing = {
 							var g = data[offset + 1];
 							var b = data[offset + 2];
 							var a = data[offset + 3];
-							var color = r << 16 | g << 8 | b;
-							switch (color) {
-								case 0xffd700:
-								case 0xfdd500:
-								case 0xfdd400:
-								case 0xfcd400:
-								case 0xfbd400:
-								case 0xfbd200:
-								case 0xfad400:
-									data[offset] = 0;
-									data[offset + 1] = 0;
-									data[offset + 2] = 0;
-									data[offset + 3] = 0;
-									break;
-								default:
-									if (a === 0x00 || b < 3) {
-										data[offset] = 0;
-										data[offset + 1] = 0;
-										data[offset + 2] = 0;
-										data[offset + 3] = 0;
-									} else {
-										data[offset] = 0;
-										data[offset + 1] = 0;
-										data[offset + 2] = 0;
-										data[offset + 3] = 0xff;
-									}
+							if (a === 0x00) {
+								data[offset] = 0;
+								data[offset + 1] = 0;
+								data[offset + 2] = 0;
+								data[offset + 3] = 0;
+							} else {
+								data[offset] = 0;
+								data[offset + 1] = 0;
+								data[offset + 2] = 0;
+								data[offset + 3] = 0xff;
 							}
 				    }
 				  }
 				  wegopdeling.getContext('2d').putImageData(wegopdelingImageData, 0, 0);
 					context.clearRect(0, 0, w, h);
+					//console.log(w, h);
 					context.putImageData(cropped, 0, 0);
 					canvas.style.border = '1px solid #000000';
 					canvas.id = 'Wegbaan' + wegbaan.id;
 					document.body.appendChild(canvas);
 					var polygon = Polygon.fromCanvas(canvas, map.parameters.bbox.split(','), width, height, new Point(filled.x, filled.y));
 					if (polygon.points.length > 0) {
-					/*var result = MarchingSquares.getBlobOutlinePoints(canvas);
-					if (result.length > 0) {
-						var theBorder = [];
-						for (var borderIndex = 0; borderIndex < result.length / 2; borderIndex++) {
-							var borderPoint = {
-								x: result[borderIndex * 2],
-								y: result[borderIndex * 2 + 1]
-							};
-							theBorder.push(borderPoint);
-						}
-						var corners = simplify(theBorder, 2, true);
-						var polygon = [];
-				    var corner = null;//corners[0];
-				    var bbox = map.parameters.bbox.split(',');
-						var left = parseInt(bbox[0]);
-						var right = parseInt(bbox[2]);
-						var top = parseInt(bbox[1]);
-						var bottom = parseInt(bbox[3]);
-				    for (var k = 0; k < corners.length; k++) {
-				      corner = corners[k];
-				      var xPos = (left + ((corner.x + filled.x) / width) * (right - left)).toFixed(2);
-				      var yPos = (bottom - ((corner.y + filled.y) / height) * (bottom - top)).toFixed(2);
-					    polygon.push('[' + xPos + ',' + yPos + ']');
-				    }
-				    $R.polygons.push("addComplexBaan(" + wegbaan.id + ", '" + (wegbaan.type) + "', [" + polygon.join(',') + "]);");*/
 				    $R.polygons.push("addComplexBaan(" + wegbaan.id + ", '" + (wegbaan.type) + "', " + polygon.toFixed(2) + ");");
-				    //console.log('Wegopdeling ' + [wegopdeling.width, wegopdeling.height].join('x'));
-				    //console.log('Wegbaan ' + [canvas.width, canvas.height].join(','));
-				    //console.log([filled.x, filled.y].join(','));
 				    var imageDataRed = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
 				    context.drawImage(wegopdeling, -filled.x, -filled.y);
 				    if (wegverbinding != null) {
@@ -526,11 +495,14 @@ $R = window.Racing = {
 							var wb = document.getElementById('Wegbaan' + wegbaan.id);
 							var width = wb.width;
 							var height = wb.height;
+							//console.log(filled);
+							//console.log(width, height);
 				    	var wvb = wegverbinding.getContext('2d').getImageData(filled.x, filled.y, width, height);
+				    	document.getElementById('Wegopdeling' + wegbaan.id).getContext('2d').strokeRect(filled.x, filled.y, width, height);
 				    	var c = new Canvas(wvb, '1px solid #000000');
 				    	c.id = 'Wegknopen' + wegbaan.id;
 				    	document.body.appendChild(c);
-				    	//c.style.display = 'none';
+				    	c.style.display = 'none';
 				    	var wegknopen = c.getContext('2d').getImageData(0, 0, c.width, c.height);
 				    	var wbImage = wb.getContext('2d').getImageData(0, 0, c.width, c.height);
 				    	var data = wegknopen.data;
@@ -563,35 +535,7 @@ $R = window.Racing = {
 				    	ff.image.removeColor(0x00ff00);
 				    	var ffCanvas = new Canvas(ff.image, '1px solid #000000');
 				    	document.body.appendChild(ffCanvas);
-				    	/*var result = MarchingSquares.getBlobOutlinePoints(ffCanvas);
-				    	if (result.length > 0) {
-								var theBorder = [];
-								for (var borderIndex = 0; borderIndex < result.length / 2; borderIndex++) {
-									var borderPoint = {
-										x: result[borderIndex * 2],
-										y: result[borderIndex * 2 + 1]
-									};
-									theBorder.push(borderPoint);
-								}
-								var corners = simplify(theBorder, 2, true);
-								var polygon = [];
-						    var corner = null;
-								var left = parseInt(bbox[0]);
-								var right = parseInt(bbox[2]);
-								var top = parseInt(bbox[1]);
-								var bottom = parseInt(bbox[3]);
-								var thePolygon = new Polygon();
-						    for (var k = 0; k < corners.length; k++) {
-						      corner = corners[k];
-						      var xPos = (left + ((corner.x + filled.x) / map.imageData.width) * (right - left));
-				      		var yPos = (bottom - ((corner.y + filled.y) / map.imageData.height) * (bottom - top));
-							    polygon.push('[' + xPos.toFixed(2) + ',' + yPos.toFixed(2) + ']');
-							    thePolygon.points.push(new Point(xPos, yPos));
-						    }
-						    //console.log(thePolygon.toFixed(2));
-						    //console.log(polygon.join(','));
-						    $R.polygonsBaan.push("addComplexBaan(" + wegbaan.id + ", '" + (wegbaan.type + 'Baan') + "', [" + polygon.join(',') + "]);");
-						  }*/
+				    	//console.log(maxScale);
 						  var polygon = Polygon.fromCanvas(ffCanvas, bbox, map.imageData.width, map.imageData.height, new Point(filled.x, filled.y));
 						  $R.polygonsBaan.push("addComplexBaan(" + wegbaan.id + ", '" + (wegbaan.type + 'Baan') + "', " + polygon.toFixed(2) + ");");
 				    }
@@ -633,6 +577,7 @@ $R = window.Racing = {
 				    
 					}
 				}
+				//console.log('scale=' + (maxScale / scale));
 			} else {
 				//console.log(['--', wegbaan.id, scale, width, height]);
 				var maxScale = $R.getMaxScale($R.MAX_SCALE, width, height);
@@ -644,16 +589,21 @@ $R = window.Racing = {
 				var bbox = wegbaan._bbox;
 				if (filled.x == 0) {
 					bbox[0] -= width * maxScale / scale;
+					console.log('left');
 				}
 				if (filled.y == 0) {
 					bbox[3] += height * maxScale / scale;
+					console.log('top');
 				}
 				if (filled.x + filled.width == width) {
 					bbox[2] += width * maxScale / scale;
+					console.log('right');
 				}
 				if (filled.y + filled.height == height) {
 					bbox[1] -= height * maxScale / scale;
+					console.log('bottom');
 				}
+				//console.log(maxScale / scale);
 				var w = bbox[2] - bbox[0];
 				var h = bbox[3] - bbox[1];
 				//var maxScale = Math.floor(Math.min(Math.max($R.MAX_WIDTH / (w * scale), $R.MAX_HEIGHT / (h * scale)), $R.MAX_SCALE));
