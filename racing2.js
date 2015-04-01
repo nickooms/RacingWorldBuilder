@@ -383,7 +383,9 @@ $R = window.Racing = {
 					canvas.style.border = '1px solid #000000';
 					canvas.id = 'Wegbaan' + wegbaan.id;
 					document.body.appendChild(canvas);
-					var result = MarchingSquares.getBlobOutlinePoints(canvas);
+					var polygon = Polygon.fromCanvas(canvas, map.parameters.bbox.split(','), width, height, new Point(filled.x, filled.y));
+					if (polygon.points.length > 0) {
+					/*var result = MarchingSquares.getBlobOutlinePoints(canvas);
 					if (result.length > 0) {
 						var theBorder = [];
 						for (var borderIndex = 0; borderIndex < result.length / 2; borderIndex++) {
@@ -407,7 +409,8 @@ $R = window.Racing = {
 				      var yPos = (bottom - ((corner.y + filled.y) / height) * (bottom - top)).toFixed(2);
 					    polygon.push('[' + xPos + ',' + yPos + ']');
 				    }
-				    $R.polygons.push("addComplexBaan(" + wegbaan.id + ", '" + (wegbaan.type) + "', [" + polygon.join(',') + "]);");
+				    $R.polygons.push("addComplexBaan(" + wegbaan.id + ", '" + (wegbaan.type) + "', [" + polygon.join(',') + "]);");*/
+				    $R.polygons.push("addComplexBaan(" + wegbaan.id + ", '" + (wegbaan.type) + "', " + polygon.toFixed(2) + ");");
 				    //console.log('Wegopdeling ' + [wegopdeling.width, wegopdeling.height].join('x'));
 				    //console.log('Wegbaan ' + [canvas.width, canvas.height].join(','));
 				    //console.log([filled.x, filled.y].join(','));
@@ -560,7 +563,7 @@ $R = window.Racing = {
 				    	ff.image.removeColor(0x00ff00);
 				    	var ffCanvas = new Canvas(ff.image, '1px solid #000000');
 				    	document.body.appendChild(ffCanvas);
-				    	var result = MarchingSquares.getBlobOutlinePoints(ffCanvas);
+				    	/*var result = MarchingSquares.getBlobOutlinePoints(ffCanvas);
 				    	if (result.length > 0) {
 								var theBorder = [];
 								for (var borderIndex = 0; borderIndex < result.length / 2; borderIndex++) {
@@ -572,7 +575,7 @@ $R = window.Racing = {
 								}
 								var corners = simplify(theBorder, 2, true);
 								var polygon = [];
-						    var corner = null;//corners[0];
+						    var corner = null;
 								var left = parseInt(bbox[0]);
 								var right = parseInt(bbox[2]);
 								var top = parseInt(bbox[1]);
@@ -585,10 +588,12 @@ $R = window.Racing = {
 							    polygon.push('[' + xPos.toFixed(2) + ',' + yPos.toFixed(2) + ']');
 							    thePolygon.points.push(new Point(xPos, yPos));
 						    }
-						    console.log(thePolygon.toFixed(2));
-						    console.log(polygon.join(','));
+						    //console.log(thePolygon.toFixed(2));
+						    //console.log(polygon.join(','));
 						    $R.polygonsBaan.push("addComplexBaan(" + wegbaan.id + ", '" + (wegbaan.type + 'Baan') + "', [" + polygon.join(',') + "]);");
-						  }
+						  }*/
+						  var polygon = Polygon.fromCanvas(ffCanvas, bbox, map.imageData.width, map.imageData.height, new Point(filled.x, filled.y));
+						  $R.polygonsBaan.push("addComplexBaan(" + wegbaan.id + ", '" + (wegbaan.type + 'Baan') + "', " + polygon.toFixed(2) + ");");
 				    }
 				    var x = w / 2;
 				    var y = h / 2;
