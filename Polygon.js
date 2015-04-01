@@ -1,5 +1,9 @@
 var Polygon = function(points) {
-	this.points = points;
+	if (points === undefined) {
+		this.points = [];
+	} else {
+		this.points = points;
+	}
 };
 Polygon.fromWKT = function(wkt) {
 	var points = wkt.split('POLYGON ((')[1].split('))')[0].split(', ');

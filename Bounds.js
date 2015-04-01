@@ -1,7 +1,9 @@
 var Bounds = function(points) {
 	this.min = new Point(Infinity, Infinity);
 	this.max = new Point(-Infinity, -Infinity);
-	this.addPoints(points);
+	if (points !== undefined) {
+		this.addPoints(points);
+	}
 };
 Bounds.prototype.addPoint = function(point) {
 	this.min = new Point(Math.min(point.x, this.min.x), Math.min(point.y, this.min.y));

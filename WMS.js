@@ -35,6 +35,7 @@ WMS.getFeatureInfo = function(layers, width, height, bbox, x, y) {
   	}
   	var url = WMS.GRB + params.join('&');
   	var parseResults = function(results) {
+  		
   		if (results.indexOf('Search returned no results.') == -1) {
 	  		switch (parameters.LAYERS) {
 	  			case 'GRB_WKN':
@@ -44,8 +45,15 @@ WMS.getFeatureInfo = function(layers, width, height, bbox, x, y) {
 	  				resolve(Wegverbindingen.parse(results, parameters));
 	  				break;
 	  			case 'GRB_WBN':
+	  				//console.log(parameters.LAYERS);
 	  				//console.log(results);
-	  				resolve(Wegbaan.parse(results, parameters));
+	  				var wegbaan = Wegbaan.parse(results, parameters);
+	  				//$R.Wegbanen.remove();
+	  				//console.log(wegbaan);
+	  				if (!$R.Wegbanen.exists(wegbaan)) {
+	  					$R.Wegbanen.add();
+	  				}
+	  				resolve(wegbaan);
 	  				break;
 	  		}
 	  	} else {

@@ -5,9 +5,12 @@ var Wegbanen = function() {
 Wegbanen.prototype = new Array();
 Wegbanen.prototype.constructor = Wegbanen;
 Wegbanen.prototype.add = function(newWegbaan) {
+	//console.log(this._loading);
 	if (newWegbaan === undefined) {
+		//console.log('+');
 		this._loading++;
 	} else {
+		//console.log('-');
 		var wegbaan;
 		if (this.exists(newWegbaan)) {
 			wegbaan = this.get(newWegbaan);
@@ -19,10 +22,11 @@ Wegbanen.prototype.add = function(newWegbaan) {
 		if (this._loading === 0) {
 			this.loaded();
 		}
-		return wegbaan
+		return wegbaan;
 	}
 };
 Wegbanen.prototype.remove = function() {
+	//console.log('-');
 	this._loading--;
 	if (this._loading === 0) {
 		this.loaded();
