@@ -69,7 +69,7 @@ Wegbaan.prototype.radius = function() {
 	};
 };
 Wegbaan.prototype.addPoint = function(point) {
-	this.points.push(point)
+	this.points.push(point);
 };
 Wegbaan.parse = function(wegbaan, parameters) {
 	wegbaan = wegbaan.replace("GetFeatureInfo results:\n\nLayer 'GRB_WBN'\n  Feature", '').split(':');

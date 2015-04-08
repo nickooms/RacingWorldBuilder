@@ -51,6 +51,18 @@ $R = window.Racing = {
   row: function(data) {
     return data.split('</tr><tr><td>')[1].split('</td></tr>')[0].split('</td><td>');
   },
+  group: function(id) {
+  	var group = document.querySelector('div#Group' + id);
+  	if (group === null) {
+  		group = document.createElement('div');
+  		group.id = 'Group' + id;
+  		//group.style.position = 'relative';
+  		//group.style.left = '0px';
+  		//group.style.top = '0px';
+  		document.body.appendChild(group);
+  	}
+  	return group;
+  },
   init: function() {
   	$('#results, h1, h2, select, table, br, input').css('display', 'none');
     $R.huisNummers = [];
@@ -78,6 +90,7 @@ $R = window.Racing = {
   			var bbox = wegbaan.bbox();
   			//console.log(bbox);
   			//console.log(wegbaan);
+  			wegbaan.layers = {};
   			var width = Math.abs(bbox[0] - bbox[2]) * 5;
   			var height = Math.abs(bbox[1] - bbox[3]) * 5;
   			var min = new Point(Math.min(bbox[0], bbox[2]), Math.min(bbox[1], bbox[3]));
@@ -87,18 +100,31 @@ $R = window.Racing = {
   			console.log(min);
   			console.log(max);*/
   			WMS.getMap('GRB_WGO', width, height, min.x, min.y, max.x, max.y, wegbaan).then(function(map) {
-  				var canvas = new Canvas(map.imageData, '1px solid #000000');
-  				var wegbaan = map.object
-  				canvas.id = 'Wegopdeling' + wegbaan.id;
-  				//canvas.style.display = 'none';
-  				document.body.appendChild(canvas);
+  				var wegbaan = map.object;
+  				var canvas = new Canvas('Wegopdeling' + wegbaan.id, map.imageData, '1px solid #000000');
+  				canvas.setPosition(map.bbox);
+  				//$R.Wegbanen.get(189873)
+  				//canvas.id = 'Wegopdeling' + wegbaan.id;
+  				canvas.style.display = 'none';
+  				$R.group(wegbaan.id).appendChild(canvas);
+  				wegbaan.layers['GRB_WGO'] = {
+  					bbox: map.bbox,
+  					width: map.width,
+  					height: map.height
+  				};
 				});
 				WMS.getMap('GRB_WVB', width, height, min.x, min.y, max.x, max.y, wegbaan).then(function(map) {
-					var canvas = new Canvas(map.imageData, '1px solid #000000');
-  				var wegbaan = map.object
-  				canvas.id = 'Wegverbinding' + wegbaan.id;
+					var wegbaan = map.object;
+					var canvas = new Canvas('Wegverbinding' + wegbaan.id, map.imageData, '1px solid #000000');
+					canvas.setPosition(map.bbox);
+  				//canvas.id = 'Wegverbinding' + wegbaan.id;
   				canvas.style.display = 'none';
-  				document.body.appendChild(canvas);
+  				$R.group(wegbaan.id).appendChild(canvas);
+  				wegbaan.layers['GRB_WVB'] = {
+  					bbox: map.bbox,
+  					width: map.width,
+  					height: map.height
+  				};
 				});
   			//console.log(document.body.getElementsByTagName('canvas').length);
   			var canvas = document.getElementById(wegbaan.id.toString());
@@ -230,7 +256,7 @@ $R = window.Racing = {
   	return maxScale;
   },
   getWegbaanBounds: function(bbox, wegbaan, scale) {
-  	console.log(bbox, scale);
+  	//console.log(bbox, scale);
 		var min = {
 			x: bbox[0],
 			y: bbox[1]
@@ -247,9 +273,13 @@ $R = window.Racing = {
 			var maxScale = $R.getMaxScale(1, width, height);
 		}
 		WMS.getMap('GRB_WBN', width * maxScale, height * maxScale, min.x, min.y, max.x, max.y, wegbaan).then(function(map) {
+			//console.log(map);
 			var wegbaan = map.object;
 			var imageData = map.imageData;
-			var canvas = document.createElement('canvas');
+			var canvas = new Canvas('Wegbaan' + wegbaan.id, imageData, '1px solid #000000');
+			canvas.setPosition(map.bbox);
+			//canvas.id = 'Wegbaan' + wegbaan.id;
+			//var canvas = document.createElement('canvas');
 			var width = imageData.width;
 			var height = imageData.height;
 			var bbox = map.parameters.bbox.split(',');
@@ -262,13 +292,13 @@ $R = window.Racing = {
 			var scaleY = height / (bottom - top);
 			var scale = (scaleX + scaleY) / 2;
 			var maxScale = $R.getMaxScale(scale, width, height);
-			canvas.width = width;
-			canvas.height = height;
+			//canvas.width = width;
+			//canvas.height = height;
 			var context = canvas.getContext('2d');
-			context.putImageData(imageData, 0, 0);
-			var img = document.createElement('img');
+			//context.putImageData(imageData, 0, 0);
+			/*var img = document.createElement('img');
 			img.src = canvas.toDataURL();
-			document.body.appendChild(img);
+			$R.group(wegbaan.id).appendChild(img);*/
 			context.strokeStyle = '#000000';
 			var filled = null;
 			for (var i = 0; i < wegbaan.points.length; i++) {
@@ -318,15 +348,41 @@ $R = window.Racing = {
 					wegbaan.border = {};
 					var w = filled.width;
 					var h = filled.height;
+					//console.log(w, h);
 					var wegopdeling = document.getElementById('Wegopdeling' + wegbaan.id);
 					var wegverbinding = document.getElementById('Wegverbinding' + wegbaan.id);
 					var ctx = wegopdeling.getContext('2d');
-					var offsetX = wegopdeling.width - parseInt(map.parameters.width);
-					var offsetY = wegopdeling.height - parseInt(map.parameters.height);
-					var wegopdelingCropped = ctx.getImageData(filled.x + offsetX, filled.y + offsetY, w, h);
+					//var offsetX = wegopdeling.width - parseInt(map.parameters.width);
+					//var offsetY = wegopdeling.height - parseInt(map.parameters.height);
+					var wegopdelingCropped = ctx.getImageData(filled.x, filled.y, w, h);
 					var cropped = context.getImageData(filled.x, filled.y, w, h);
 					//console.log(map.parameters.width, map.parameters.height);
-					
+					//console.log(canvas.width, canvas.height);
+					var left = map.bbox[0];
+					var top = map.bbox[1];
+					var right = map.bbox[2];
+					var bottom = map.bbox[3];
+
+					var wegbaanWidth = right - left;
+					var wegbaanHeight = bottom - top;
+					var minX = filled.x / canvas.width;
+					var minY = filled.y / canvas.height;
+					var maxX = (canvas.width - (filled.x + filled.width)) / canvas.width;
+					var maxY = (canvas.height - (filled.y + filled.height)) / canvas.height;
+					//var wegbaanLeft = (left + ((filled.x) / width) * (right - left));
+					//var wegbaanTop = (bottom - ((filled.y) / height) * (bottom - top));
+					var wegbaanRight = (left + ((filled.x + filled.width) / width) * (right - left));
+					var wegbaanBottom = (bottom - ((filled.y + filled.height) / height) * (bottom - top));
+					var wegbaanLeft = left + (minX * wegbaanWidth);
+					var wegbaanTop = top + (minY * wegbaanHeight);
+					var wegbaanRight = right - (maxX * wegbaanWidth);
+					var wegbaanBottom = bottom - (maxY * wegbaanHeight);
+					/*console.log(filled);
+					console.log(wegbaan);
+					console.log(x, y);
+					console.log(map.bbox);*/
+					wegbaan.bounds = [wegbaanLeft, wegbaanTop, wegbaanRight, wegbaanBottom];
+					//console.log(wegbaanBbox);
 					canvas.width = w;
 					canvas.height = h;
 					var data = cropped.data;
@@ -377,9 +433,7 @@ $R = window.Racing = {
 					context.clearRect(0, 0, w, h);
 					//console.log(w, h);
 					context.putImageData(cropped, 0, 0);
-					canvas.style.border = '1px solid #000000';
-					canvas.id = 'Wegbaan' + wegbaan.id;
-					document.body.appendChild(canvas);
+					$R.group(wegbaan.id).appendChild(canvas);
 					var polygon = Polygon.fromCanvas(canvas, map.parameters.bbox.split(','), width, height, new Point(filled.x, filled.y));
 					if (polygon.points.length > 0) {
 				    $R.polygons.push("addComplexBaan(" + wegbaan.id + ", '" + (wegbaan.type) + "', " + polygon.toFixed(2) + ");");
@@ -425,7 +479,7 @@ $R = window.Racing = {
 							}
 							var wegverbindingContext = wegverbinding.getContext('2d');
 							imageData.removeColor(0xe6e6e6);
-							wegverbindingContext.drawImage(new Canvas(imageData), 0, 0);
+							wegverbindingContext.drawImage(new Canvas('wegverbinding', imageData), 0, 0);
 							var d = imageDataRed.data;
 							for (var y = 0; y < canvas.height; y++) {
 								for (var x = 0; x < canvas.width; x++) {
@@ -448,7 +502,7 @@ $R = window.Racing = {
 									}
 								}
 							}
-							canvas.getContext('2d').drawImage(new Canvas(imageDataRed), 0, 0);
+							canvas.getContext('2d').drawImage(new Canvas('red', imageDataRed), 0, 0);
 							var min = {
 								x: Math.min(wegbaan._bbox[0], wegbaan._bbox[2]),
 								y: Math.min(wegbaan._bbox[1], wegbaan._bbox[3])
@@ -499,9 +553,10 @@ $R = window.Racing = {
 							//console.log(width, height);
 				    	var wvb = wegverbinding.getContext('2d').getImageData(filled.x, filled.y, width, height);
 				    	document.getElementById('Wegopdeling' + wegbaan.id).getContext('2d').strokeRect(filled.x, filled.y, width, height);
-				    	var c = new Canvas(wvb, '1px solid #000000');
-				    	c.id = 'Wegknopen' + wegbaan.id;
-				    	document.body.appendChild(c);
+				    	var c = new Canvas('Wegknopen' + wegbaan.id, wvb, '1px solid #000000');
+				    	c.setPosition(bbox);
+				    	//c.id = 'Wegknopen' + wegbaan.id;
+				    	$R.group(wegbaan.id).appendChild(c);
 				    	c.style.display = 'none';
 				    	var wegknopen = c.getContext('2d').getImageData(0, 0, c.width, c.height);
 				    	var wbImage = wb.getContext('2d').getImageData(0, 0, c.width, c.height);
@@ -533,11 +588,15 @@ $R = window.Racing = {
 				    	var ff = floodFill(canvas, parseInt(c.width / 2), parseInt(c.height / 2), 0x666666ff, 0xff);
 				    	ff.image.removeColor(0xff0000);
 				    	ff.image.removeColor(0x00ff00);
-				    	var ffCanvas = new Canvas(ff.image, '1px solid #000000');
-				    	document.body.appendChild(ffCanvas);
+				    	var ffCanvas = new Canvas('Baan' + wegbaan.id, ff.image, '1px solid #000000');
+				    	ffCanvas.setPosition(bbox);
+				    	//ffCanvas.id = 'Baan' + wegbaan.id;
+				    	$R.group(wegbaan.id).appendChild(ffCanvas);
 				    	//console.log(maxScale);
 						  var polygon = Polygon.fromCanvas(ffCanvas, bbox, map.imageData.width, map.imageData.height, new Point(filled.x, filled.y));
 						  $R.polygonsBaan.push("addComplexBaan(" + wegbaan.id + ", '" + (wegbaan.type + 'Baan') + "', " + polygon.toFixed(2) + ");");
+						  canvas.setPosition(wegbaan.bounds);
+						  ffCanvas.setPosition(wegbaan.bounds);
 				    }
 				    var x = w / 2;
 				    var y = h / 2;
@@ -718,9 +777,10 @@ $R = window.Racing = {
 			  if (false) WMS.getMap('DHMVII_DSM_1m', gebouw.width, gebouw.height, gebouw.min.x, gebouw.min.y, gebouw.max.x, gebouw.max.y, gebouw).then(function(map) {
 			  	var gebouw = map.object;
 			  	var imageData = map.imageData;
-			  	var canvas = new Canvas(imageData, '1px solid #000000');
+			  	var canvas = new Canvas('HoogteGebouw' + gebouw.id, imageData, '1px solid #000000');
+			  	canvas.setPosition(map.bbox);
 			  	canvas.title = $R.straatNaam + ' ' + gebouw.huisnummer;
-			  	document.body.appendChild(canvas);
+			  	$R.group(wegbaan.id).appendChild(canvas);
 				  WMS.getMap('GRB_GBG', gebouw.width, gebouw.height, gebouw.min.x, gebouw.min.y, gebouw.max.x, gebouw.max.y, [canvas, gebouw]).then(function(map) {
 				  	var canvas = map.object[0];
 				  	var gebouw = map.object[1];
@@ -872,7 +932,7 @@ $R = window.Racing = {
       if ($R.straat.wegsegmentenCount == $R.straat.wegsegmentenLoaded) {
         $R.gml.push(GML.END);
         //console.log($R.gml.join('\n'));
-        listHuisnummers();
+        //listHuisnummers();
       }
     };
     var listHuisnummers = function() {

@@ -63,6 +63,7 @@
       "Polygon.js",
       "Point.js",
       "Bounds.js",
+      "BBOX.js",
       "ImageData.js",
       "Canvas.js",
       "CanvasRenderingContext2D.js"

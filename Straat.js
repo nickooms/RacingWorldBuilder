@@ -1,6 +1,7 @@
 var Straat = function(gemeenteId, id) {
 	this.id = id;
 	this.gemeenteId = gemeenteId;
+	this.bounds = new Bounds();
 };
 Straat.prototype.loadLocation = function(callback) {
 	var cacheLocation = function(response) {
@@ -21,6 +22,7 @@ Straat.prototype.loadLocation = function(callback) {
   		x: parseFloat(bounds[2]),
   		y: parseFloat(bounds[3])
   	};
+  	this.bounds.addPoints([this.min, this.max]);
     callback.bind(this)();
   };
 	var parameters = {

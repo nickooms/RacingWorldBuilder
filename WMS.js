@@ -77,6 +77,7 @@ WMS.getFeatureInfo = function(layers, width, height, bbox, x, y) {
 	});
 };
 WMS.getMap = function(layers, width, height, minX, minY, maxX, maxY, object) {
+	var bbox = [minX, minY, maxX, maxY];
 	var parameters = {
 		layers: layers || 'GRB_basiskaart',
 		format: 'image/png',
@@ -86,7 +87,7 @@ WMS.getMap = function(layers, width, height, minX, minY, maxX, maxY, object) {
 		request: 'GetMap',
 		styles: '',
 		crs: 'EPSG:31370',
-		bbox: [minX, minY, maxX, maxY].join(','),
+		bbox: bbox.join(','),
 		width: width || 1000,
 		height: height || 1000
 	};
@@ -108,7 +109,10 @@ WMS.getMap = function(layers, width, height, minX, minY, maxX, maxY, object) {
 				object: object,
 				url: url,
 				parameters: parameters,
-				imageData: imageData
+				imageData: imageData,
+				bbox: bbox,
+				width: width,
+				height: height
 			});
 		};
 		var cache = localStorage[url];
@@ -129,7 +133,9 @@ WMS.getMap = function(layers, width, height, minX, minY, maxX, maxY, object) {
 		  			canvas.height = height;
 		  			var context = canvas.getContext('2d');
 		  			context.drawImage(image, 0, 0);
-		  			localStorage[xhr.responseURL] = canvas.toDataURL('image/png');
+		  			try {
+		  				localStorage[xhr.responseURL] = canvas.toDataURL('image/png');
+		  			} catch (e) {}
 		  			var imageData = context.getImageData(0, 0, width, height);
 		  			processImageData(imageData, xhr.responseURL);
 		  		};
