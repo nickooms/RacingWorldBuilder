@@ -22,6 +22,31 @@ Wegbaan.COLOR = {
 		flood: 0xff0000ff
 	}
 };
+Wegbaan.prototype.getLayer = function(layerName) {
+	var wegbaan = this;
+	return new Promise(function(resolve, reject) {
+		var width = 100;
+		var height = 100;
+		var bbox = wegbaan.bbox();
+		var min = new Point(bbox[0], bbox[1]);
+		var max = new Point(bbox[2], bbox[3]);
+		WMS.getMap(layerName, width, height, min.x, min.y, max.x, max.y, wegbaan).then(function(map) {
+			var wegbaan = map.object;
+			//var canvas = new Canvas('Wegopdeling' + wegbaan.id, map.imageData, '1px solid #000000');
+			//canvas.setPosition(map.bbox);
+			//$R.Wegbanen.get(189873)
+			//canvas.id = 'Wegopdeling' + wegbaan.id;
+			var layer = new Layer({
+				id: 'Wegopdeling' + wegbaan.id,
+				layerName: layerName,
+				imageData: map.imageData,
+				min: min,
+				max: max
+			});
+			resolve(layer);
+		});
+	});
+};
 Wegbaan.prototype.bbox = function() {
 	if (this._bbox === undefined) {
 		var radius = this.radius();
