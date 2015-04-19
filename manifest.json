@@ -52,11 +52,13 @@
       "Wegbaan.js",
       "Wegknoop.js",
       "Wegverbindingen.js",
+      "Wegverbinding.js",
       "Wegobject.js",
       "Wegsegment.js",
       "Straat.js",
       "GML.js",
       "WMS.js",
+      "LAYERS.js",
       "FloodFill.js",
       "MarchingSquares.js",
       "simplify.js",
@@ -67,7 +69,10 @@
       "ImageData.js",
       "Canvas.js",
       "CanvasRenderingContext2D.js",
-      "Layer.js"
+      "Layer.js",
+      "LayerType.js",
+      "LayerTypes.js",
+      "Kruispuntzone.js"
     ]
   }],
   "permissions": [

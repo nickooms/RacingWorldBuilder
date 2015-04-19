@@ -49,4 +49,4 @@ Wegverbindingen.parse = function(wegverbindingen, parameters) {
 		}
 	}
 	return wegverbindingen;
-	};
+};

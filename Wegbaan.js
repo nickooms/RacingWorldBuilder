@@ -22,6 +22,47 @@ Wegbaan.COLOR = {
 		flood: 0xff0000ff
 	}
 };
+Wegbaan.prototype.fillPoints = function(canvas, bbox, width, height, scaleX, scaleY) {
+	var context = canvas.getContext('2d');
+	var scale = (scaleX + scaleY) / 2;
+	var filled = null;
+	var data;
+	for (var i = 0; i < this.points.length; i++) {
+		var point = this.points[i];
+		var left = parseInt(point.bbox[0] - bbox[0]) * scaleX;
+		var top = parseInt(point.bbox[1] - bbox[1]) * scaleY;
+		var right = -parseInt(point.bbox[2] - bbox[2]) * scaleX;
+		var bottom = -parseInt(point.bbox[3] - bbox[3]) * scaleY;
+		var w = width - (left + right);
+		var h = height - (top + bottom);
+		var x = left + w;
+		var y = 1 + height - (top + h);
+		imageData = context.getImageData(0, 0, width, height);
+		data = imageData.data;
+		var offset = (x + y * width) * 4;
+		var r = data[offset];
+		var g = data[offset + 1];
+		var b = data[offset + 2];
+		var a = data[offset + 3];
+		var color = r << 16 | g << 8 | b;
+		var wegbaanColor = Wegbaan.COLOR[this.type];
+		if (a != 0x00) {
+			if (color !== wegbaanColor.fill) {
+				var foundColor = $R.findColor(imageData, x, y, wegbaanColor.find, 3 * scale, wegbaanColor.fill);
+				if (foundColor) {
+					if (foundColor.color != wegbaanColor.fill) {
+						filled = floodFill(canvas, foundColor.x, foundColor.y, wegbaanColor.flood, 0xff);
+					}
+				} else {
+					context.strokeRect(x, y, 1, 1);
+				}
+			}
+		} else {
+			console.log(a);
+		}
+	}
+	return filled;
+};
 Wegbaan.prototype.getLayer = function(layerName) {
 	var wegbaan = this;
 	return new Promise(function(resolve, reject) {

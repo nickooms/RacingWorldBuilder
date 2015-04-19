@@ -1,10 +1,15 @@
 var BBOX = function() {
-	var bbox;
-	if (arguments.length === 1) {
-		bbox = arguments[0];
+	switch (arguments.length) {
+		case 1:
+			var bbox = arguments[0];
+			this.min = new Point(bbox[0], bbox[1]);
+			this.max = new Point(bbox[2], bbox[3]);
+			break;
+		case 2:
+			this.min = arguments[0];
+			this.max = arguments[1];
+			break;
 	}
-	this.min = new Point(bbox[0], bbox[1]);
-	this.max = new Point(bbox[2], bbox[3]);
 };
 BBOX.prototype.width = function() {
 	return this.max.x - this.min.x;

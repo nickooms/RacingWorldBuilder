@@ -56,9 +56,6 @@ $R = window.Racing = {
   	if (group === null) {
   		group = document.createElement('div');
   		group.id = 'Group' + id;
-  		//group.style.position = 'relative';
-  		//group.style.left = '0px';
-  		//group.style.top = '0px';
   		document.body.appendChild(group);
   	}
   	return group;
@@ -77,163 +74,64 @@ $R = window.Racing = {
     $R.polygonsBaan = [];
     $R.ready = true;
     $R.Wegbanen = new Wegbanen();
-    $R.kruispuntzones = [];
+    $R.Kruispuntzones = [];
+    $R.Wegverbindingen = [];
     $R.Wegbanen.loaded(function() {
-    	//console.log(this);
+    	var layersLoaded = [];
     	for (var wegbaan of this) {
-    		//console.log([wegbaan.id, wegbaan.type]);
-    		
-
-    		var kruispuntzone;
   			var bbox = wegbaan.bbox();
   			$R.getWegbaanBounds(bbox, wegbaan, 1);
   			var bbox = wegbaan.bbox();
-  			//console.log(bbox);
-  			//console.log(wegbaan);
   			wegbaan.layers = {};
-  			var width = Math.abs(bbox[0] - bbox[2]) * 5;
-  			var height = Math.abs(bbox[1] - bbox[3]) * 5;
-  			var min = new Point(Math.min(bbox[0], bbox[2]), Math.min(bbox[1], bbox[3]));
-  			var max = new Point(Math.max(bbox[0], bbox[2]), Math.max(bbox[1], bbox[3]));
-  			/*console.log(width);
-  			console.log(height);
-  			console.log(min);
-  			console.log(max);*/
-  			WMS.getMap('GRB_WGO', width, height, min.x, min.y, max.x, max.y, wegbaan).then(function(map) {
-  				var wegbaan = map.object;
-  				var canvas = new Canvas('Wegopdeling' + wegbaan.id, map.imageData, '1px solid #000000');
-  				canvas.setPosition(map.bbox);
-  				//$R.Wegbanen.get(189873)
-  				//canvas.id = 'Wegopdeling' + wegbaan.id;
-  				canvas.style.display = 'none';
-  				$R.group(wegbaan.id).appendChild(canvas);
-  				wegbaan.layers['GRB_WGO'] = {
-  					bbox: map.bbox,
-  					width: map.width,
-  					height: map.height
-  				};
-				});
-				WMS.getMap('GRB_WVB', width, height, min.x, min.y, max.x, max.y, wegbaan).then(function(map) {
-					var wegbaan = map.object;
-					var canvas = new Canvas('Wegverbinding' + wegbaan.id, map.imageData, '1px solid #000000');
-					canvas.setPosition(map.bbox);
-  				//canvas.id = 'Wegverbinding' + wegbaan.id;
-  				canvas.style.display = 'none';
-  				$R.group(wegbaan.id).appendChild(canvas);
-  				wegbaan.layers['GRB_WVB'] = {
-  					bbox: map.bbox,
-  					width: map.width,
-  					height: map.height
-  				};
-				});
-  			//console.log(document.body.getElementsByTagName('canvas').length);
-  			var canvas = document.getElementById(wegbaan.id.toString());
-  			//console.log(canvas);
+  			var bbox = new BBOX(bbox);
+  			var min = bbox.min;
+  			var max = bbox.max;
+  			var width = bbox.width() * 5;
+  			var height = bbox.height() * 5;
+  			layersLoaded.push(LayerTypes.item('GRB_WGO').getMap(wegbaan, bbox, width, height));
+  			layersLoaded.push(LayerTypes.item('GRB_WVB').getMap(wegbaan, bbox, width, height));
   			if (wegbaan.type === 'kruispuntzone') {
-  				//console.log('kruispuntzone');
-  				//console.log(wegbaan);
-  				kruispuntzone = {
-  					wegbaan: wegbaan.id,
-  					wegknopen: []
-  				};
-  				var kruispuntzoneNames = {};
-  				for (var wegknoopId in wegbaan.wegknopen) {
-  					var wegknoop = $R.wegknopen[wegknoopId];
-  					//console.log(wegknoop);
-  					var names = {};
-  					var wegverbindingen = [];
-  					for (var wegverbindingId in wegknoop.wegverbindingen) {
-  						var wegverbindingName = wegknoop.wegverbindingen[wegverbindingId];
-  						if (wegverbindingName != $R.straatNaam) {
-  							names[wegverbindingName] = wegverbindingName;
-  							kruispuntzoneNames[wegverbindingName] = wegverbindingName;
-  						} else {
-  							var wegverbinding = $R.wegverbindingen[wegverbindingId];
-  							wegverbindingen.push(wegverbinding);
-  						}
-  					}
-  					var s = [$R.straatNaam];
-  					for (var name in names) {
-  						s.push(name);
-  					}
-  					wegknoop.name = s.join(', ');
-  					wegknoop.links = {};
-  					wegknoop.wegbaan = wegbaan.id;
-  					//console.log('\t' + wegknoop.name);
-  					for (var wegverbinding of wegverbindingen) {
-  						//console.log(wegverbinding)
-  						var wegknopen = wegverbinding.wegknopen;
-  						for (var linkWegknoopId in wegknopen) {
-  							if (linkWegknoopId !== wegknoopId) {
-  								//console.log('\t' + linkWegknoopId);
-  								var linkWegknoop = $R.wegknopen[linkWegknoopId];
-  								var linkWegverbindingen = {};
-  								for (var linkWegverbindingId in linkWegknoop.wegverbindingen) {
-  									var linkWegverbindingName = linkWegknoop.wegverbindingen[linkWegverbindingId];
-  									//if (linkWegverbindingName !== $R.straatNaam) {
-  										linkWegverbindingen[linkWegverbindingName] = linkWegverbindingName;
-  									//}
-  								}
-  								var s2 = [];
-  								for (var name in linkWegverbindingen) {
-  									s2.push(name);
-  								}
-  								var linkWegknoopName = s2.join(', ');
-  								linkWegknoop.name = linkWegknoopName;
-  								wegknoop.links[linkWegknoopId] = linkWegknoop;
-  								//console.log('\t\t' + linkWegknoopName);
-  							}
-  						}
-  					}
-  					kruispuntzone.wegknopen.push(wegknoop);
-  				}
-  				var s3 = [$R.straatNaam];
-					for (var name in kruispuntzoneNames) {
-						s3.push(name);
-					}
-					kruispuntzone.name = s3.join(', ');
-					$R.kruispuntzones.push(kruispuntzone);
+  				var kruispuntzone = new Kruispuntzone(wegbaan);
+  				kruispuntzone.getWegknopen();
+					$R.Kruispuntzones.push(kruispuntzone);
+  			} else {
+  				var wegverbinding = new Wegverbinding(wegbaan);
+  				$R.Wegverbindingen.push(wegverbinding);
   			}
   		}
-  		//console.log($R.kruispuntzones);
-  		for (var kruispuntzone of $R.kruispuntzones) {
-				//console.log('kruispuntzone ' + kruispuntzone.name);
-				for (var kruispunt of kruispuntzone.wegknopen) {
-					var x = (parseFloat(kruispunt.bbox[0]) + parseFloat(kruispunt.bbox[2])) / 2;
-					var y = (parseFloat(kruispunt.bbox[1]) + parseFloat(kruispunt.bbox[3])) / 2;
-					//console.log('\tkruispunt ' + kruispunt.name + ' ' + new Point(x, y).toString());
-					//console.log(kruispunt);
-					for (var lnkId in kruispunt.links) {
-						var lnk = kruispunt.links[lnkId];
-						var linkPoints = [];
-						
+  		Promise.all(layersLoaded).then(function(wegbaanLoaded) {
+				//console.log(wegbaanLoaded);
+			});
+			console.log($R.Wegverbindingen);
+			//console.log($R.wegknopen);
+			console.log($R.wegverbindingen);
+			//console.log($R.Kruispuntzones);
+  		for (var kruispuntzone of $R.Kruispuntzones) {
+  			kruispuntzone.getNames();
+  			kruispuntzone.log();
+  			//console.log(kruispuntzone);
+				for (var wegknoop of kruispuntzone.wegknopen) {
+					var names = wegknoop.getNames();
+					//console.log(names);
+					var bbox = wegknoop.bbox;
+					var x = (parseFloat(bbox[0]) + parseFloat(bbox[2])) / 2;
+					var y = (parseFloat(bbox[1]) + parseFloat(bbox[3])) / 2;
+					for (var lnkId in wegknoop.links) {
+						var lnk = wegknoop.links[lnkId];
 						var bounds = new Bounds();
-						var bbox = kruispunt.bbox;
 						bounds.addPoints([new Point(parseFloat(bbox[0]), parseFloat(bbox[1])), new Point(parseFloat(bbox[2]), parseFloat(bbox[3]))]);
-						var points = $R.Wegbanen.get(kruispunt.wegbaan).points;
-						//console.log(points);
-						for (var point of points) {
-							linkPoints.push(point);
-						}
-						var x = (parseFloat(lnk.bbox[0]) + parseFloat(lnk.bbox[2])) / 2;
-						var y = (parseFloat(lnk.bbox[1]) + parseFloat(lnk.bbox[3])) / 2;
-						//console.log('\t\t==> ' + lnk.name + ' ' + new Point(x, y).toString());
-						var bbox = lnk.bbox;
-						//console.log(lnk);
-						bounds.addPoints([new Point(parseFloat(bbox[0]), parseFloat(bbox[1])), new Point(parseFloat(bbox[2]), parseFloat(bbox[3]))]);
+						var linkPoints = $R.Wegbanen.get(wegknoop.wegbaan).points;
+						bbox = new BBOX(lnk.bbox);
+						var center = bbox.center();
+						bounds.addPoints([bbox.min, bbox.max]);
 						if (lnk.wegbaan != undefined) {
-							var points = $R.Wegbanen.get(lnk.wegbaan).points;
-							//console.log(points);
-							for (var point of points) {
-								linkPoints.push(point);
-							}
+							var linkPoints = $R.Wegbanen.get(lnk.wegbaan).points;
 							var points = {};
 							for (var point of linkPoints) {
 								var x = (point.bbox[0] + point.bbox[2]) / 2;
 								var y = (point.bbox[1] + point.bbox[3]) / 2;
 								if (bounds.min.x < x && x < bounds.max.x && bounds.min.y < y && y < bounds.max.y) {
 									points[x + ':' + y] = new Point(x, y);
-									//console.log(new Point(x, y));
 								}
 							}
 							var pointsList = [];
@@ -241,14 +139,13 @@ $R = window.Racing = {
 								pointsList.push('\t\t\t' + points[pointId].toString().replace(',', ',0,-').replace('[', '[0,').replace(']', ', 0xff0000]'));
 							}
 							lnk.pointsList = pointsList;
-							//console.log(pointsList.join('\n'));
+							console.log(pointsList);
 						} else {
 							console.log(lnk.id);
 						}
 					}
 				}
   		}
-  		//console.log('==========');
   	});
   },
   getMaxScale: function(scale, w, h) {
@@ -256,7 +153,6 @@ $R = window.Racing = {
   	return maxScale;
   },
   getWegbaanBounds: function(bbox, wegbaan, scale) {
-  	//console.log(bbox, scale);
 		var min = {
 			x: bbox[0],
 			y: bbox[1]
@@ -273,13 +169,10 @@ $R = window.Racing = {
 			var maxScale = $R.getMaxScale(1, width, height);
 		}
 		WMS.getMap('GRB_WBN', width * maxScale, height * maxScale, min.x, min.y, max.x, max.y, wegbaan).then(function(map) {
-			//console.log(map);
 			var wegbaan = map.object;
 			var imageData = map.imageData;
 			var canvas = new Canvas('Wegbaan' + wegbaan.id, imageData, '1px solid #000000');
 			canvas.setPosition(map.bbox);
-			//canvas.id = 'Wegbaan' + wegbaan.id;
-			//var canvas = document.createElement('canvas');
 			var width = imageData.width;
 			var height = imageData.height;
 			var bbox = map.parameters.bbox.split(',');
@@ -290,51 +183,11 @@ $R = window.Racing = {
 			bbox = wegbaan.bbox();
 			var scaleX = width / (right - left);
 			var scaleY = height / (bottom - top);
-			var scale = (scaleX + scaleY) / 2;
+			//var scale = (scaleX + scaleY) / 2;
 			var maxScale = $R.getMaxScale(scale, width, height);
-			//canvas.width = width;
-			//canvas.height = height;
 			var context = canvas.getContext('2d');
-			//context.putImageData(imageData, 0, 0);
-			/*var img = document.createElement('img');
-			img.src = canvas.toDataURL();
-			$R.group(wegbaan.id).appendChild(img);*/
 			context.strokeStyle = '#000000';
-			var filled = null;
-			for (var i = 0; i < wegbaan.points.length; i++) {
-				var point = wegbaan.points[i];
-				var left = parseInt(point.bbox[0] - bbox[0]) * scaleX;
-				var top = parseInt(point.bbox[1] - bbox[1]) * scaleY;
-				var right = -parseInt(point.bbox[2] - bbox[2]) * scaleX;
-				var bottom = -parseInt(point.bbox[3] - bbox[3]) * scaleY;
-				var w = width - (left + right);
-				var h = height - (top + bottom);
-				var x = left + w;
-				var y = 1 + height - (top + h);
-				imageData = context.getImageData(0, 0, width, height);
-				data = imageData.data;
-				var offset = (x + y * width) * 4;
-				var r = data[offset];
-				var g = data[offset + 1];
-				var b = data[offset + 2];
-				var a = data[offset + 3];
-				var color = r << 16 | g << 8 | b;
-				var wegbaanColor = Wegbaan.COLOR[wegbaan.type];
-				if (a != 0x00) {
-					if (color !== wegbaanColor.fill) {
-						var foundColor = $R.findColor(imageData, x, y, wegbaanColor.find, 3 * scale, wegbaanColor.fill);
-						if (foundColor) {
-							if (foundColor.color != wegbaanColor.fill) {
-								filled = floodFill(canvas, foundColor.x, foundColor.y, wegbaanColor.flood, 0xff);
-							}
-						} else {
-	  					context.strokeRect(x, y, 1, 1);
-						}
-  				}
-	  		} else {
-	  			console.log(a);
-	  		}
-			}
+			var filled = wegbaan.fillPoints(canvas, bbox, width, height, scaleX, scaleY);
 			if (filled.x > 0 && filled.x + filled.width < width && filled.y > 0 && filled.y + filled.height < height) {
 				if (wegbaan.bounds === undefined) {
 					wegbaan.bounds = {};
@@ -348,58 +201,39 @@ $R = window.Racing = {
 					wegbaan.border = {};
 					var w = filled.width;
 					var h = filled.height;
-					//console.log(w, h);
 					var wegopdeling = document.getElementById('Wegopdeling' + wegbaan.id);
 					var wegverbinding = document.getElementById('Wegverbinding' + wegbaan.id);
 					if (wegopdeling === null) {
-						//console.log(wegbaan);
 						wegbaan.getLayer('GRB_WBN').then(function(wbnLayer) {
 							wbnLayer.show();
 							console.log(wegbaan);
-							//console.log(wbnLayer);
 							for (var point of wegbaan.points) {
 								var x = (point.bbox[0] + point.bbox[2]) / 2;
 								var y = (point.bbox[1] + point.bbox[3]) / 2;
 								wbnLayer.drawPoint(new Point(x, y));
 							}
-							//wbnLayer.drawRect(new Point(wegbaan._bbox[0], wegbaan._bbox[1]), new Point(wegbaan._bbox[2], wegbaan._bbox[3]));
-							/*console.log(wbnLayer.canvas.parentElement);
-							document.body.appendChild(wbnLayer.canvas);
-							console.log(wbnLayer.canvas.parentElement);*/
 						});
 					} else {
 						var ctx = wegopdeling.getContext('2d');
-						//var offsetX = wegopdeling.width - parseInt(map.parameters.width);
-						//var offsetY = wegopdeling.height - parseInt(map.parameters.height);
 						var wegopdelingCropped = ctx.getImageData(filled.x, filled.y, w, h);
 						var cropped = context.getImageData(filled.x, filled.y, w, h);
-						//console.log(map.parameters.width, map.parameters.height);
-						//console.log(canvas.width, canvas.height);
 						var left = map.bbox[0];
 						var top = map.bbox[1];
 						var right = map.bbox[2];
 						var bottom = map.bbox[3];
-
 						var wegbaanWidth = right - left;
 						var wegbaanHeight = bottom - top;
 						var minX = filled.x / canvas.width;
 						var minY = filled.y / canvas.height;
 						var maxX = (canvas.width - (filled.x + filled.width)) / canvas.width;
 						var maxY = (canvas.height - (filled.y + filled.height)) / canvas.height;
-						//var wegbaanLeft = (left + ((filled.x) / width) * (right - left));
-						//var wegbaanTop = (bottom - ((filled.y) / height) * (bottom - top));
 						var wegbaanRight = (left + ((filled.x + filled.width) / width) * (right - left));
 						var wegbaanBottom = (bottom - ((filled.y + filled.height) / height) * (bottom - top));
 						var wegbaanLeft = left + (minX * wegbaanWidth);
 						var wegbaanTop = top + (minY * wegbaanHeight);
 						var wegbaanRight = right - (maxX * wegbaanWidth);
 						var wegbaanBottom = bottom - (maxY * wegbaanHeight);
-						/*console.log(filled);
-						console.log(wegbaan);
-						console.log(x, y);
-						console.log(map.bbox);*/
 						wegbaan.bounds = [wegbaanLeft, wegbaanTop, wegbaanRight, wegbaanBottom];
-						//console.log(wegbaanBbox);
 						canvas.width = w;
 						canvas.height = h;
 						var data = cropped.data;
@@ -424,7 +258,6 @@ $R = window.Racing = {
 						wegopdelingImageData.removeTransparent(0x3f);
 						wegopdelingImageData.removeRange(0xaa, 0xff, 0x6d, 0xd7, 0x00, 0x02); //yellow
 						wegopdelingImageData.removeRange(0x8c, 0xc0, 0x41, 0x65, 0x00, 0x17); //brown
-						//wegopdelingImageData.showColors();
 				    var data = wegopdelingImageData.data;
 				    for (var y = 0; y < wegopdeling.height; y++) {
 					    for (var x = 0; x < wegopdeling.width; x++) {
@@ -448,7 +281,6 @@ $R = window.Racing = {
 					  }
 					  wegopdeling.getContext('2d').putImageData(wegopdelingImageData, 0, 0);
 						context.clearRect(0, 0, w, h);
-						//console.log(w, h);
 						context.putImageData(cropped, 0, 0);
 						$R.group(wegbaan.id).appendChild(canvas);
 						var polygon = Polygon.fromCanvas(canvas, map.parameters.bbox.split(','), width, height, new Point(filled.x, filled.y));
@@ -566,13 +398,10 @@ $R = window.Racing = {
 								var wb = document.getElementById('Wegbaan' + wegbaan.id);
 								var width = wb.width;
 								var height = wb.height;
-								//console.log(filled);
-								//console.log(width, height);
 					    	var wvb = wegverbinding.getContext('2d').getImageData(filled.x, filled.y, width, height);
 					    	document.getElementById('Wegopdeling' + wegbaan.id).getContext('2d').strokeRect(filled.x, filled.y, width, height);
 					    	var c = new Canvas('Wegknopen' + wegbaan.id, wvb, '1px solid #000000');
 					    	c.setPosition(bbox);
-					    	//c.id = 'Wegknopen' + wegbaan.id;
 					    	$R.group(wegbaan.id).appendChild(c);
 					    	c.style.display = 'none';
 					    	var wegknopen = c.getContext('2d').getImageData(0, 0, c.width, c.height);
@@ -607,9 +436,7 @@ $R = window.Racing = {
 					    	ff.image.removeColor(0x00ff00);
 					    	var ffCanvas = new Canvas('Baan' + wegbaan.id, ff.image, '1px solid #000000');
 					    	ffCanvas.setPosition(bbox);
-					    	//ffCanvas.id = 'Baan' + wegbaan.id;
 					    	$R.group(wegbaan.id).appendChild(ffCanvas);
-					    	//console.log(maxScale);
 							  var polygon = Polygon.fromCanvas(ffCanvas, bbox, map.imageData.width, map.imageData.height, new Point(filled.x, filled.y));
 							  $R.polygonsBaan.push("addComplexBaan(" + wegbaan.id + ", '" + (wegbaan.type + 'Baan') + "', " + polygon.toFixed(2) + ");");
 							  canvas.setPosition(wegbaan.bounds);
@@ -617,7 +444,6 @@ $R = window.Racing = {
 					    }
 					    var x = w / 2;
 					    var y = h / 2;
-					    //console.log([x,y].join(','));
 					    var imageData = context.getImageData(0, 0, w, h);
 					    var data = imageData.data;
 					    imageData.removeColor(0);
@@ -639,30 +465,11 @@ $R = window.Racing = {
 								}
 							}
 					    context.putImageData(imageData, 0, 0);
-					    //canvas.style.backgroundColor = '#cccccc';
-					    //console.log(imageData);
-					    //imageData.showColors();
-					    //var color = $R.getColor(imageData, x, y);
-					    //console.log(color.toString(16));
-					    //var f = floodFill(canvas, x, y, 0xff00ff, 0x00);
-					    //console.log(f);
-
-					    //console.log([wegbaan.id, wegbaan.type]);
-					    //wegopdeling.style.display = '';
-					    
-					    
 						}
 					}
 				}
-				//console.log('scale=' + (maxScale / scale));
 			} else {
-				//console.log(['--', wegbaan.id, scale, width, height]);
 				var maxScale = $R.getMaxScale($R.MAX_SCALE, width, height);
-				//console.log(['MAX_SCALE', maxScale, scale === maxScale, scale, maxScale]);
-				/*bbox[0] *= maxScale / scale;
-				bbox[1] *= maxScale / scale;
-				bbox[2] *= maxScale / scale;
-				bbox[3] *= maxScale / scale;*/
 				var bbox = wegbaan._bbox;
 				if (filled.x == 0) {
 					bbox[0] -= width * maxScale / scale;
@@ -680,11 +487,8 @@ $R = window.Racing = {
 					bbox[1] -= height * maxScale / scale;
 					console.log('bottom');
 				}
-				//console.log(maxScale / scale);
 				var w = bbox[2] - bbox[0];
 				var h = bbox[3] - bbox[1];
-				//var maxScale = Math.floor(Math.min(Math.max($R.MAX_WIDTH / (w * scale), $R.MAX_HEIGHT / (h * scale)), $R.MAX_SCALE));
-				//console.log(['adjust', wegbaan.id, width, height, maxScale]);
 				$R.getWegbaanBounds(bbox, wegbaan, maxScale);
 			}
 		});
