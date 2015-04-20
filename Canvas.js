@@ -13,6 +13,9 @@ var Canvas = function(id, imageData, border) {
 	//canvas.style.zIndex = 1;
 	return canvas;
 };
+HTMLCanvasElement.prototype.getImageData = function() {
+	return this.getContext('2d').getImageData(0, 0, this.width, this.height);
+};
 HTMLCanvasElement.prototype.setPosition = function(bbox) {
 	var x = parseInt($R.straat.min.x) - bbox[0];
 	var y = parseInt($R.straat.min.y) - bbox[1];

@@ -103,16 +103,12 @@ $R = window.Racing = {
 				//console.log(wegbaanLoaded);
 			});
 			console.log($R.Wegverbindingen);
-			//console.log($R.wegknopen);
 			console.log($R.wegverbindingen);
-			//console.log($R.Kruispuntzones);
   		for (var kruispuntzone of $R.Kruispuntzones) {
   			kruispuntzone.getNames();
   			kruispuntzone.log();
-  			//console.log(kruispuntzone);
 				for (var wegknoop of kruispuntzone.wegknopen) {
 					var names = wegknoop.getNames();
-					//console.log(names);
 					var bbox = wegknoop.bbox;
 					var x = (parseFloat(bbox[0]) + parseFloat(bbox[2])) / 2;
 					var y = (parseFloat(bbox[1]) + parseFloat(bbox[3])) / 2;
@@ -183,7 +179,7 @@ $R = window.Racing = {
 			bbox = wegbaan.bbox();
 			var scaleX = width / (right - left);
 			var scaleY = height / (bottom - top);
-			//var scale = (scaleX + scaleY) / 2;
+			var scale = (scaleX + scaleY) / 2;
 			var maxScale = $R.getMaxScale(scale, width, height);
 			var context = canvas.getContext('2d');
 			context.strokeStyle = '#000000';
@@ -217,184 +213,44 @@ $R = window.Racing = {
 						var ctx = wegopdeling.getContext('2d');
 						var wegopdelingCropped = ctx.getImageData(filled.x, filled.y, w, h);
 						var cropped = context.getImageData(filled.x, filled.y, w, h);
-						var left = map.bbox[0];
-						var top = map.bbox[1];
-						var right = map.bbox[2];
-						var bottom = map.bbox[3];
-						var wegbaanWidth = right - left;
-						var wegbaanHeight = bottom - top;
+						var bbox = new BBOX(map.bbox);
+						var wegbaanWidth = bbox.width();
+						var wegbaanHeight = bbox.height();
 						var minX = filled.x / canvas.width;
 						var minY = filled.y / canvas.height;
 						var maxX = (canvas.width - (filled.x + filled.width)) / canvas.width;
 						var maxY = (canvas.height - (filled.y + filled.height)) / canvas.height;
-						var wegbaanRight = (left + ((filled.x + filled.width) / width) * (right - left));
-						var wegbaanBottom = (bottom - ((filled.y + filled.height) / height) * (bottom - top));
-						var wegbaanLeft = left + (minX * wegbaanWidth);
-						var wegbaanTop = top + (minY * wegbaanHeight);
-						var wegbaanRight = right - (maxX * wegbaanWidth);
-						var wegbaanBottom = bottom - (maxY * wegbaanHeight);
+						var wegbaanLeft = bbox.min.x + (minX * wegbaanWidth);
+						var wegbaanTop = bbox.min.y + (minY * wegbaanHeight);
+						var wegbaanRight = bbox.max.x - (maxX * wegbaanWidth);
+						var wegbaanBottom = bbox.max.y - (maxY * wegbaanHeight);
 						wegbaan.bounds = [wegbaanLeft, wegbaanTop, wegbaanRight, wegbaanBottom];
 						canvas.width = w;
 						canvas.height = h;
-						var data = cropped.data;
-						var colors = {};
-						for (var y = 0; y < h; y++) {
-							for (var x = 0; x < w; x++) {
-								var offset = (x + y * w) * 4;
-								var r = data[offset];
-								var g = data[offset + 1];
-								var b = data[offset + 2];
-								var a = data[offset + 3];
-								var color = r << 16 | g << 8 | b;
-								if (color !== 0xff0000 && color !== 0x00ff00) {
-									data[offset] = 0;
-									data[offset + 1] = 0;
-									data[offset + 2] = 0;
-									data[offset + 3] = 0;
-								}
-							}
-						}
-						var wegopdelingImageData = wegopdeling.getContext('2d').getImageData(0, 0, wegopdeling.width, wegopdeling.height);
+						cropped.replaceColors([0xff0000, 0x00ff00], [], null, [0x00, 0x00, 0x00], 0x00);
+						var wegopdelingImageData = wegopdeling.getImageData();
 						wegopdelingImageData.removeTransparent(0x3f);
 						wegopdelingImageData.removeRange(0xaa, 0xff, 0x6d, 0xd7, 0x00, 0x02); //yellow
 						wegopdelingImageData.removeRange(0x8c, 0xc0, 0x41, 0x65, 0x00, 0x17); //brown
-				    var data = wegopdelingImageData.data;
-				    for (var y = 0; y < wegopdeling.height; y++) {
-					    for (var x = 0; x < wegopdeling.width; x++) {
-					    	var offset = (x + y * wegopdeling.width) * 4;
-								var r = data[offset];
-								var g = data[offset + 1];
-								var b = data[offset + 2];
-								var a = data[offset + 3];
-								if (a === 0x00) {
-									data[offset] = 0;
-									data[offset + 1] = 0;
-									data[offset + 2] = 0;
-									data[offset + 3] = 0;
-								} else {
-									data[offset] = 0;
-									data[offset + 1] = 0;
-									data[offset + 2] = 0;
-									data[offset + 3] = 0xff;
-								}
-					    }
-					  }
+						wegopdelingImageData.removeTransparent(0x01);
+						wegopdelingImageData.replaceColors([0x000000], [0x00, 0x00, 0x00], 0x00, [0x00, 0x00, 0x00], 0xff);
 					  wegopdeling.getContext('2d').putImageData(wegopdelingImageData, 0, 0);
 						context.clearRect(0, 0, w, h);
 						context.putImageData(cropped, 0, 0);
 						$R.group(wegbaan.id).appendChild(canvas);
-						var polygon = Polygon.fromCanvas(canvas, map.parameters.bbox.split(','), width, height, new Point(filled.x, filled.y));
+						var polygon = Polygon.fromCanvas(canvas, map.bbox, width, height, new Point(filled.x, filled.y));
 						if (polygon.points.length > 0) {
 					    $R.polygons.push("addComplexBaan(" + wegbaan.id + ", '" + (wegbaan.type) + "', " + polygon.toFixed(2) + ");");
-					    var imageDataRed = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+					    var imageDataRed = canvas.getImageData();
 					    context.drawImage(wegopdeling, -filled.x, -filled.y);
 					    if (wegverbinding != null) {
-					    	var width = wegverbinding.width;
-					    	var height = wegverbinding.height;
-					    	var imageData = wegverbinding.getContext('2d').getImageData(0, 0, width, height);
-					    	var imageData2 = canvas.getContext('2d').getImageData(filled.x, filled.y, width, height);
-					    	var data = imageData.data;
-					    	var data2 = imageDataRed.data;
-					    	var colors2 = {};
-					    	for (var y = 0; y < height; y++) {
-									for (var x = 0; x < width; x++) {
-										var offset = (x + y * width) * 4;
-										var r = data[offset];
-										var g = data[offset + 1];
-										var b = data[offset + 2];
-										var a = data[offset + 3];
-										var color = r << 16 | g << 8 | b;
-										if (color === 0xe6e6e6) {
-											data[offset] = 0x00;
-											data[offset + 1] = 0x00;
-											data[offset + 2] = 0x00;
-											data[offset + 3] = 0xff;
-											var r2 = data2[offset];
-											var g2 = data2[offset + 1];
-											var b2 = data2[offset + 2];
-											var a2 = data2[offset + 3];
-											var color2 = (r2 << 16 | g2 << 8 | b2).toString(16);
-											if (colors2[color2] === undefined) {
-												colors2[color2] = 0;
-											}
-											colors2[color2]++;
-										} else {
-											data[offset] = 0;
-											data[offset + 1] = 0;
-											data[offset + 2] = 0;
-											data[offset + 3] = 0;
-										}
-									}
-								}
+					    	var imageData = wegverbinding.getImageData();
+					    	imageData.replaceColors([0xe6e6e6], [0x00, 0x00, 0x00], 0xff, [0x00, 0x00, 0x00], 0x00);
 								var wegverbindingContext = wegverbinding.getContext('2d');
 								imageData.removeColor(0xe6e6e6);
 								wegverbindingContext.drawImage(new Canvas('wegverbinding', imageData), 0, 0);
-								var d = imageDataRed.data;
-								for (var y = 0; y < canvas.height; y++) {
-									for (var x = 0; x < canvas.width; x++) {
-										var offset  = (x + y * canvas.width) * 4;
-										var r = d[offset];
-										var g = d[offset + 1];
-										var b = d[offset + 2];
-										var a = d[offset + 3];
-										var color = (r << 16 | g << 8 | b);
-										if (color === 0xff0000 || color === 0x00ff00) {
-											d[offset] = 0;
-											d[offset + 1] = 0;
-											d[offset + 2] = 0;
-											d[offset + 3] = 0;
-										} else {
-											d[offset] = 0xff;
-											d[offset + 1] = 0xff;
-											d[offset + 2] = 0xff;
-											d[offset + 3] = 0xff;
-										}
-									}
-								}
+								imageDataRed.replaceColors([0xff0000, 0x00ff00], [0x00, 0x00, 0x00], 0x00, [0xff, 0xff ,0xff], 0xff);
 								canvas.getContext('2d').drawImage(new Canvas('red', imageDataRed), 0, 0);
-								var min = {
-									x: Math.min(wegbaan._bbox[0], wegbaan._bbox[2]),
-									y: Math.min(wegbaan._bbox[1], wegbaan._bbox[3])
-								};
-								var max = {
-									x: Math.max(wegbaan._bbox[0], wegbaan._bbox[2]),
-									y: Math.max(wegbaan._bbox[1], wegbaan._bbox[3])
-								};
-								var bbox = wegbaan.bbox();
-								var width = Math.abs(max.x - min.x);
-								var height = Math.abs(max.y - min.y);
-								for (var point of wegbaan.points) {
-									var center = {
-										x: (point.bbox[0] + point.bbox[2]) / 2,
-										y: (point.bbox[1] + point.bbox[3]) / 2
-									};
-									if (min.x < center.x && center.x < max.x && min.y < center.y && center.y < max.y) {
-										var x = parseInt(center.x - min.x);
-										var y = height - parseInt(max.y - center.y);
-										context.fillStyle = '#0000ff';									
-									}
-								}
-								for (var wegknoopId in wegbaan.wegknopen) {
-									var wegknoop = $R.wegknopen[wegknoopId];
-									var min = {
-										x: Math.min(wegbaan._bbox[0], wegbaan._bbox[2]),
-										y: Math.min(wegbaan._bbox[1], wegbaan._bbox[3])
-									};
-									var max = {
-										x: Math.max(wegbaan._bbox[0], wegbaan._bbox[2]),
-										y: Math.max(wegbaan._bbox[1], wegbaan._bbox[3])
-									};
-									var center = {
-										x: (point.bbox[0] + point.bbox[2]) / 2,
-										y: (point.bbox[1] + point.bbox[3]) / 2
-									};
-									var width = max.x - min.x;
-									var height = max.y - min.y;
-									if (min.x < center.x && center.x < max.x && min.y < center.y && center.y < max.y) {
-										var x = parseInt(center.x - min.x);
-										var y = parseInt(max.y - center.y);
-									}
-								}
 								var wb = document.getElementById('Wegbaan' + wegbaan.id);
 								var width = wb.width;
 								var height = wb.height;
@@ -404,7 +260,7 @@ $R = window.Racing = {
 					    	c.setPosition(bbox);
 					    	$R.group(wegbaan.id).appendChild(c);
 					    	c.style.display = 'none';
-					    	var wegknopen = c.getContext('2d').getImageData(0, 0, c.width, c.height);
+					    	var wegknopen = c.getImageData();
 					    	var wbImage = wb.getContext('2d').getImageData(0, 0, c.width, c.height);
 					    	var data = wegknopen.data;
 					    	var wbdata = wbImage.data;

@@ -15,6 +15,43 @@ ImageData.prototype.removeColor = function(colorToRemove) {
 		}
 	}
 };
+ImageData.prototype.replaceColors = function(colors, replaceColor, replaceAlpha, otherColor, otherAlpha) {
+	var data = this.data;
+	var width = this.width;
+	var height = this.height;
+	for (var y = 0; y < height; y++) {
+		for (var x = 0; x < width; x++) {
+			var offset  = (x + y * width) * 4;
+			var r = data[offset];
+			var g = data[offset + 1];
+			var b = data[offset + 2];
+			var color = (r << 16 | g << 8 | b);
+			var newColor = null;
+			var newAlpha = null;
+			for (var searchColor of colors) {
+				if (color === searchColor) {
+					newColor = replaceColor;
+					newAlpha = replaceAlpha;
+				}
+			}
+			if (newColor === null) {
+				data[offset] = otherColor[0];
+				data[offset + 1] = otherColor[1];
+				data[offset + 2] = otherColor[2];
+				data[offset + 3] = otherAlpha;
+			} else {
+				if (newColor.length == 3) {
+					data[offset] = newColor[0];
+					data[offset + 1] = newColor[1];
+					data[offset + 2] = newColor[2];
+				}
+				if (newAlpha != null) {
+					data[offset + 3] = newAlpha;
+				}
+			}
+		}
+	}
+};
 ImageData.prototype.removeColors = function(colorsToRemove) {
 	var data = this.data;
 	var width = this.width;
